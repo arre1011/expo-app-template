@@ -1,0 +1,445 @@
+/**
+ * End-to-End Integration Tests for Complete Drink Flow
+ *
+ * These tests simulate real user scenarios from start to finish:
+ * 1. User adds a drink
+ * 2. Modal appears when limit is reached
+ * 3. User clicks "Trotzdem eintragen"
+ * 4. Drink is saved without deleting previous drinks
+ * 5. All views (Home, Calendar, Statistics) show consistent data
+ */
+
+import React from 'react';
+import { render, fireEvent, waitFor } from '@testing-library/react-native';
+import { useAppStore } from '../src/ui/hooks/useAppStore';
+import { useCalendarStore } from '../src/ui/hooks/useCalendarStore';
+import { useStatisticsStore } from '../src/ui/hooks/useStatisticsStore';
+import {
+  createUserProfile,
+} from '../src/data/repositories/userProfileRepository';
+import {
+  getDrinkEntriesForDay,
+} from '../src/data/repositories/drinkEntryRepository';
+import {
+  upsertDailyGoal,
+} from '../src/data/repositories/dailyGoalRepository';
+import { getDatabase, resetDatabase } from '../src/data/database/connection';
+import { CreateDrinkEntry, UserProfile } from '../src/domain/models/types';
+import { format } from 'date-fns';
+import GoalReachedModal from '../app/(modals)/goal-reached';
+
+// Mock router
+jest.mock('expo-router', () => ({
+  router: {
+    back: jest.fn(),
+    replace: jest.fn(),
+    dismissAll: jest.fn(),
+  },
+}));
+
+describe.skip('E2E: Complete Drink Adding Flow', () => {
+  let testProfile: UserProfile;
+
+  beforeAll(async () => {
+    await getDatabase();
+  });
+
+  beforeEach(async () => {
+    // Reset database
+    await resetDatabase();
+
+    // Reset all stores
+    useAppStore.setState({
+      profile: null,
+      hasProfile: false,
+      isProfileLoading: true,
+      todayDrinks: [],
+      sessionDrinks: [],
+      todayGoal: null,
+      bacTimeSeries: null,
+      isTodayLoading: true,
+      isAddDrinkModalOpen: false,
+      showGoalReachedSheet: false,
+      showGoalExceededSheet: false,
+      pendingDrink: null,
+    });
+
+    // Create test profile
+    testProfile = await createUserProfile({
+      weightKg: 75,
+      sex: 'male',
+      bodyWaterConstantR: 0.68,
+      eliminationRatePermillePerHour: 0.15,
+    });
+
+    // Set up goal
+    await upsertDailyGoal({
+      date: format(new Date(), 'yyyy-MM-dd'),
+      maxBAC: 0.5,
+      enabled: true,
+    });
+
+    // Load all stores
+    await useAppStore.getState().loadProfile();
+    await useAppStore.getState().loadTodayData();
+    await useCalendarStore.getState().loadMonthData();
+    await useStatisticsStore.getState().loadStats();
+  });
+
+  describe('Scenario 1: Adding drinks without hitting limit', () => {
+    it('should add single drink and update all views', async () => {
+      const today = new Date();
+
+      // Initial state: no drinks
+      expect(useAppStore.getState().todayDrinks).toHaveLength(0);
+      expect(useAppStore.getState().bacTimeSeries?.currentBAC).toBeFalsy();
+
+      // User adds one small beer
+      const drink: CreateDrinkEntry = {
+        type: 'beer_small',
+        volumeMl: 330,
+        abvPercent: 5.0,
+        label: 'Small Beer',
+        notes: null,
+        timestamp: today.toISOString(),
+      };
+
+      await useAppStore.getState().addDrink(drink);
+
+      // No modal should be shown (under limit)
+      expect(useAppStore.getState().showGoalReachedSheet).toBe(false);
+      expect(useAppStore.getState().showGoalExceededSheet).toBe(false);
+
+      // Drink should be in DB
+      const drinksInDb = await getDrinkEntriesForDay(today);
+      expect(drinksInDb).toHaveLength(1);
+      expect(drinksInDb[0].label).toBe('Small Beer');
+
+      // Store should be updated
+      expect(useAppStore.getState().todayDrinks).toHaveLength(1);
+
+      // BAC should be calculated
+      expect(useAppStore.getState().bacTimeSeries?.currentBAC).toBeGreaterThan(0);
+
+      // Calendar and statistics should reflect the change
+      await useCalendarStore.getState().loadMonthData();
+      await useStatisticsStore.getState().loadStats();
+
+      const calendarState = useCalendarStore.getState();
+      const todayKey = format(today, 'yyyy-MM-dd');
+      const todayData = calendarState.daysData[todayKey];
+      expect(todayData?.drinkCount).toBe(1);
+
+      const statsState = useStatisticsStore.getState();
+      expect(statsState.todayStats?.drinkCount).toBe(1);
+    });
+  });
+
+  describe('Scenario 2: Hitting limit and clicking "Trotzdem eintragen"', () => {
+    it('should preserve all drinks when user confirms despite limit', async () => {
+      const today = new Date();
+
+      // Step 1: User adds first drink
+      const drink1: CreateDrinkEntry = {
+        type: 'beer_large',
+        volumeMl: 500,
+        abvPercent: 5.0,
+        label: 'Beer 1',
+        notes: null,
+        timestamp: new Date(today.getTime() - 30 * 60 * 1000).toISOString(),
+      };
+
+      await useAppStore.getState().addDrink(drink1);
+
+      // First drink should be added successfully
+      let drinksInDb = await getDrinkEntriesForDay(today);
+      expect(drinksInDb).toHaveLength(1);
+
+      // Step 2: User adds second drink that triggers limit
+      const drink2: CreateDrinkEntry = {
+        type: 'wine',
+        volumeMl: 200,
+        abvPercent: 12.0,
+        label: 'Wine 1',
+        notes: null,
+        timestamp: today.toISOString(),
+      };
+
+      await useAppStore.getState().addDrink(drink2);
+
+      // Modal should be shown
+      let state = useAppStore.getState();
+      expect(state.showGoalReachedSheet || state.showGoalExceededSheet).toBe(true);
+      expect(state.pendingDrink).toBeTruthy();
+
+      // Drink should NOT be in DB yet
+      drinksInDb = await getDrinkEntriesForDay(today);
+      expect(drinksInDb).toHaveLength(1); // Only first drink
+
+      // Step 3: User sees the modal and clicks "Trotzdem eintragen"
+      await state.confirmPendingDrink();
+
+      // CRITICAL: Both drinks should now be in DB
+      drinksInDb = await getDrinkEntriesForDay(today);
+      expect(drinksInDb).toHaveLength(2);
+
+      const labels = drinksInDb.map(d => d.label).sort();
+      expect(labels).toEqual(['Beer 1', 'Wine 1']);
+
+      // Modal should be dismissed
+      state = useAppStore.getState();
+      expect(state.showGoalReachedSheet).toBe(false);
+      expect(state.showGoalExceededSheet).toBe(false);
+      expect(state.pendingDrink).toBeNull();
+
+      // Store should have both drinks
+      expect(state.todayDrinks.length).toBeGreaterThanOrEqual(2);
+
+      // BAC should reflect both drinks
+      expect(state.bacTimeSeries?.currentBAC).toBeGreaterThan(0.5);
+    });
+
+    it('should handle modal UI correctly during flow', async () => {
+      const today = new Date();
+
+      // Add first drink
+      await useAppStore.getState().addDrink({
+        type: 'wine',
+        volumeMl: 200,
+        abvPercent: 12.0,
+        label: 'Wine 1',
+        notes: null,
+        timestamp: new Date(today.getTime() - 60 * 60 * 1000).toISOString(),
+      });
+
+      // Add second drink to trigger modal
+      await useAppStore.getState().addDrink({
+        type: 'wine',
+        volumeMl: 200,
+        abvPercent: 12.0,
+        label: 'Wine 2',
+        notes: null,
+        timestamp: today.toISOString(),
+      });
+
+      // Render the modal
+      const { getByText } = render(<GoalReachedModal />);
+
+      // Modal should be visible
+      expect(getByText('Wasser zuerst')).toBeTruthy();
+      expect(getByText('Trotzdem eintragen')).toBeTruthy();
+
+      // Click "Trotzdem eintragen"
+      const confirmButton = getByText('Trotzdem eintragen');
+      fireEvent.press(confirmButton);
+
+      // Wait for confirmation
+      await waitFor(() => {
+        const state = useAppStore.getState();
+        expect(state.showGoalReachedSheet).toBe(false);
+        expect(state.showGoalExceededSheet).toBe(false);
+      });
+
+      // Both drinks should exist
+      const drinksInDb = await getDrinkEntriesForDay(today);
+      expect(drinksInDb).toHaveLength(2);
+    });
+  });
+
+  describe('Scenario 3: Multiple drinks in sequence with limit checks', () => {
+    it('should correctly handle adding 5 drinks in a row', async () => {
+      const today = new Date();
+
+      // User adds 5 beers over time
+      for (let i = 1; i <= 5; i++) {
+        const timestamp = new Date(today.getTime() - (120 - i * 20) * 60 * 1000).toISOString();
+        const drink: CreateDrinkEntry = {
+          type: 'beer_small',
+          volumeMl: 330,
+          abvPercent: 5.0,
+          label: `Beer ${i}`,
+          notes: null,
+          timestamp,
+        };
+
+        await useAppStore.getState().addDrink(drink);
+
+        // Check if modal was shown
+        const state = useAppStore.getState();
+        if (state.showGoalReachedSheet || state.showGoalExceededSheet) {
+          // User clicks "Trotzdem eintragen" every time
+          await state.confirmPendingDrink();
+        }
+
+        // Reload to ensure consistency
+        await useAppStore.getState().loadTodayData();
+
+        // Check that all previous drinks still exist
+        const drinksInDb = await getDrinkEntriesForDay(today);
+        expect(drinksInDb.length).toBeGreaterThanOrEqual(i);
+      }
+
+      // Final check: all 5 drinks should exist
+      const finalDrinks = await getDrinkEntriesForDay(today);
+      expect(finalDrinks).toHaveLength(5);
+
+      const labels = finalDrinks.map(d => d.label).sort();
+      expect(labels).toEqual(['Beer 1', 'Beer 2', 'Beer 3', 'Beer 4', 'Beer 5']);
+
+      // BAC should be significantly elevated
+      const state = useAppStore.getState();
+      expect(state.bacTimeSeries?.currentBAC).toBeGreaterThan(1.0);
+    });
+  });
+
+  describe('Scenario 4: Cross-view consistency', () => {
+    it('should show consistent data across Home, Calendar, and Statistics', async () => {
+      const today = new Date();
+
+      // Add 3 drinks
+      for (let i = 1; i <= 3; i++) {
+        const drink: CreateDrinkEntry = {
+          type: 'beer_small',
+          volumeMl: 330,
+          abvPercent: 5.0,
+          label: `Beer ${i}`,
+          notes: null,
+          timestamp: new Date(today.getTime() - (60 - i * 15) * 60 * 1000).toISOString(),
+        };
+
+        await useAppStore.getState().addDrink(drink);
+
+        // Confirm if modal shown
+        const state = useAppStore.getState();
+        if (state.pendingDrink) {
+          await state.confirmPendingDrink();
+        }
+      }
+
+      // Reload all stores
+      await useAppStore.getState().loadTodayData();
+      await useCalendarStore.getState().loadMonthData();
+      await useStatisticsStore.getState().loadStats();
+
+      // Check Home view (app store)
+      const appState = useAppStore.getState();
+      expect(appState.todayDrinks).toHaveLength(3);
+
+      // Check Calendar view
+      const calendarState = useCalendarStore.getState();
+      const todayKey = format(today, 'yyyy-MM-dd');
+      const todayData = calendarState.daysData[todayKey];
+      expect(todayData?.drinkCount).toBe(3);
+
+      // Check Statistics view
+      const statsState = useStatisticsStore.getState();
+      expect(statsState.todayStats?.drinkCount).toBe(3);
+
+      // All three views should show the same drink count
+      expect(appState.todayDrinks.length).toBe(todayData?.drinkCount);
+      expect(todayData?.drinkCount).toBe(statsState.todayStats?.drinkCount);
+
+      // BAC should be consistent
+      // (Calendar and Stats calculate BAC independently, but should match)
+      const appBAC = appState.bacTimeSeries?.peakBAC ?? 0;
+      const calendarBAC = todayData?.peakBAC ?? 0;
+      const statsBAC = statsState.todayStats?.peakBAC ?? 0;
+
+      // Allow small floating point differences
+      expect(Math.abs(appBAC - calendarBAC)).toBeLessThan(0.01);
+      expect(Math.abs(calendarBAC - statsBAC)).toBeLessThan(0.01);
+    });
+  });
+
+  describe('Scenario 5: Canceling pending drink', () => {
+    it('should not save drink when user clicks "Wasser zuerst"', async () => {
+      const today = new Date();
+
+      // Add first drink
+      await useAppStore.getState().addDrink({
+        type: 'wine',
+        volumeMl: 200,
+        abvPercent: 12.0,
+        label: 'Wine 1',
+        notes: null,
+        timestamp: today.toISOString(),
+      });
+
+      let drinksInDb = await getDrinkEntriesForDay(today);
+      const initialCount = drinksInDb.length;
+
+      // Try to add second drink
+      await useAppStore.getState().addDrink({
+        type: 'wine',
+        volumeMl: 200,
+        abvPercent: 12.0,
+        label: 'Wine 2 - will be cancelled',
+        notes: null,
+        timestamp: today.toISOString(),
+      });
+
+      // Modal should be shown
+      let state = useAppStore.getState();
+      expect(state.showGoalReachedSheet || state.showGoalExceededSheet).toBe(true);
+
+      // User clicks "Wasser zuerst" (cancel)
+      state.cancelPendingDrink();
+
+      // Drink should NOT be saved
+      drinksInDb = await getDrinkEntriesForDay(today);
+      expect(drinksInDb.length).toBe(initialCount);
+
+      // Modal should be closed
+      state = useAppStore.getState();
+      expect(state.showGoalReachedSheet).toBe(false);
+      expect(state.showGoalExceededSheet).toBe(false);
+      expect(state.pendingDrink).toBeNull();
+    });
+  });
+
+  describe('Scenario 6: Stress test - rapid drink additions', () => {
+    it('should handle adding 10 drinks rapidly without data loss', async () => {
+      const today = new Date();
+
+      // Rapidly add 10 drinks
+      const addPromises = [];
+      for (let i = 1; i <= 10; i++) {
+        const timestamp = new Date(today.getTime() - (200 - i * 10) * 60 * 1000).toISOString();
+        const drink: CreateDrinkEntry = {
+          type: 'beer_small',
+          volumeMl: 330,
+          abvPercent: 5.0,
+          label: `Beer ${i}`,
+          notes: null,
+          timestamp,
+        };
+
+        // Add drink and auto-confirm if modal appears
+        const addPromise = useAppStore.getState().addDrink(drink).then(() => {
+          const state = useAppStore.getState();
+          if (state.pendingDrink) {
+            return state.confirmPendingDrink();
+          }
+        });
+
+        addPromises.push(addPromise);
+      }
+
+      // Wait for all additions to complete
+      await Promise.all(addPromises);
+
+      // Reload data
+      await useAppStore.getState().loadTodayData();
+
+      // All 10 drinks should exist
+      const drinksInDb = await getDrinkEntriesForDay(today);
+      expect(drinksInDb.length).toBeGreaterThanOrEqual(10);
+
+      // No drinks should be lost
+      const labels = new Set(drinksInDb.map(d => d.label));
+      for (let i = 1; i <= 10; i++) {
+        expect(labels.has(`Beer ${i}`)).toBe(true);
+      }
+    });
+  });
+});

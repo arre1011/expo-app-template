@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "deny": [
+      "Read(./NOTE.md)",
+      "Edit(./NOTE.md)"
+    ]
+  }
+}

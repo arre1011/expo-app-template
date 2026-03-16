@@ -1,0 +1,13 @@
+# Maestro Configuration for Drink Tracking App
+# https://maestro.mobile.dev/
+
+# App identifier
+# iOS bundle identifier & Android package name
+appId: com.drinktracking.app
+
+# Default timeout for assertions (in milliseconds)
+# onFlowStart:
+#   - clearState  # Uncomment to clear state before each flow
+
+# Tags for organizing tests
+# Run specific tags with: maestro test --include-tags=smoke .maestro/

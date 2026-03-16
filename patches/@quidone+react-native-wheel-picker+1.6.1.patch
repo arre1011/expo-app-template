@@ -1,0 +1,42 @@
+diff --git a/node_modules/@quidone/react-native-wheel-picker/dest/commonjs/base/picker/hooks/useSyncScrollEffect.js b/node_modules/@quidone/react-native-wheel-picker/dest/commonjs/base/picker/hooks/useSyncScrollEffect.js
+index b478e41..57825d0 100644
+--- a/node_modules/@quidone/react-native-wheel-picker/dest/commonjs/base/picker/hooks/useSyncScrollEffect.js
++++ b/node_modules/@quidone/react-native-wheel-picker/dest/commonjs/base/picker/hooks/useSyncScrollEffect.js
+@@ -29,12 +29,14 @@ const useSyncScrollEffect = ({
+   (0, _react2.useEffectWithDynamicDepsLength)(() => {
+     clearTimeout(timeoutId.current);
+     // fix: loops between two values. We are making a small delay so that the value in other places can be updated for verification.
+-    timeoutId.current = setTimeout(syncScroll, 0);
++    // PATCHED: Increased timeout from 0 to 50 to fix Android loop issue in bottom-sheet
++    timeoutId.current = setTimeout(syncScroll, 50);
+   }, [valueIndex, enableSyncScrollAfterScrollEnd, ...extraValues]);
+   const onScrollEnd = (0, _reactUsefulHooks.useStableCallback)(() => {
+     if (enableSyncScrollAfterScrollEnd && value !== undefined) {
+       clearTimeout(timeoutId.current);
+-      timeoutId.current = setTimeout(syncScroll, 0);
++      // PATCHED: Increased timeout from 0 to 50 to fix Android loop issue in bottom-sheet
++      timeoutId.current = setTimeout(syncScroll, 50);
+     }
+   });
+   return {
+diff --git a/node_modules/@quidone/react-native-wheel-picker/dest/module/base/picker/hooks/useSyncScrollEffect.js b/node_modules/@quidone/react-native-wheel-picker/dest/module/base/picker/hooks/useSyncScrollEffect.js
+index 7f43f7c..672affb 100644
+--- a/node_modules/@quidone/react-native-wheel-picker/dest/module/base/picker/hooks/useSyncScrollEffect.js
++++ b/node_modules/@quidone/react-native-wheel-picker/dest/module/base/picker/hooks/useSyncScrollEffect.js
+@@ -23,12 +23,14 @@ const useSyncScrollEffect = ({
+   useEffectWithDynamicDepsLength(() => {
+     clearTimeout(timeoutId.current);
+     // fix: loops between two values. We are making a small delay so that the value in other places can be updated for verification.
+-    timeoutId.current = setTimeout(syncScroll, 0);
++    // PATCHED: Increased timeout from 0 to 50 to fix Android loop issue in bottom-sheet
++    timeoutId.current = setTimeout(syncScroll, 50);
+   }, [valueIndex, enableSyncScrollAfterScrollEnd, ...extraValues]);
+   const onScrollEnd = useStableCallback(() => {
+     if (enableSyncScrollAfterScrollEnd && value !== undefined) {
+       clearTimeout(timeoutId.current);
+-      timeoutId.current = setTimeout(syncScroll, 0);
++      // PATCHED: Increased timeout from 0 to 50 to fix Android loop issue in bottom-sheet
++      timeoutId.current = setTimeout(syncScroll, 50);
+     }
+   });
+   return {

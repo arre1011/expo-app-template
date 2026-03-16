@@ -1,0 +1,263 @@
+/**
+ * CRITICAL REGRESSION TEST: App Store Modal Trigger
+ *
+ * This test verifies that useAppStore.addDrink() correctly sets
+ * showGoalReachedSheet or showGoalExceededSheet to TRUE when the limit is reached.
+ *
+ * This test will FAIL if someone changes the code to:
+ * set({ pendingDrink: drink, showGoalReachedSheet: false })
+ */
+
+import { useAppStore } from '../src/ui/hooks/useAppStore';
+import * as drinkEntryRepo from '../src/data/repositories/drinkEntryRepository';
+import * as dailyGoalRepo from '../src/data/repositories/dailyGoalRepository';
+import * as userProfileRepo from '../src/data/repositories/userProfileRepository';
+import { CreateDrinkEntry, DailyGoal, DrinkEntry, UserProfile } from '../src/domain/models/types';
+import { format } from 'date-fns';
+
+// Mock all repository functions
+jest.mock('../src/data/repositories/drinkEntryRepository');
+jest.mock('../src/data/repositories/dailyGoalRepository');
+jest.mock('../src/data/repositories/userProfileRepository');
+jest.mock('expo-router', () => ({
+  router: {
+    back: jest.fn(),
+    replace: jest.fn(),
+    dismissAll: jest.fn(),
+  },
+}));
+
+describe('CRITICAL: App Store Modal Trigger Test', () => {
+  const mockProfile: UserProfile = {
+    id: 1,
+    weightKg: 75,
+    sex: 'male',
+    bodyWaterConstantR: 0.68,
+    eliminationRatePermillePerHour: 0.15,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  };
+
+  const mockGoal: DailyGoal = {
+    id: 1,
+    date: format(new Date(), 'yyyy-MM-dd'),
+    maxBAC: 0.5,
+    enabled: true,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  };
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+
+    // Setup store with profile
+    useAppStore.setState({
+      profile: mockProfile,
+      hasProfile: true,
+      isProfileLoading: false,
+      todayDrinks: [],
+      sessionDrinks: [],
+      todayGoal: mockGoal,
+      bacTimeSeries: null,
+      isTodayLoading: false,
+      isAddDrinkModalOpen: false,
+      showGoalReachedSheet: false,
+      showGoalExceededSheet: false,
+      pendingDrink: null,
+    });
+
+    // Mock repository functions
+    (drinkEntryRepo.createDrinkEntry as jest.Mock).mockResolvedValue({
+      id: 1,
+      timestamp: new Date().toISOString(),
+      type: 'wine',
+      volumeMl: 200,
+      abvPercent: 12.0,
+      label: 'Wine',
+      notes: null,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    });
+
+    (dailyGoalRepo.getDailyGoalForDate as jest.Mock).mockResolvedValue(mockGoal);
+  });
+
+  describe('🚨 CRITICAL REGRESSION TEST 🚨', () => {
+    it('MUST set showGoalReachedSheet to TRUE when limit is reached', async () => {
+      // Setup: Mock that user already has one wine
+      const existingDrinks: DrinkEntry[] = [
+        {
+          id: 1,
+          timestamp: new Date(Date.now() - 30 * 60 * 1000).toISOString(),
+          type: 'wine',
+          volumeMl: 200,
+          abvPercent: 12.0,
+          label: 'Wine 1',
+          notes: null,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        },
+      ];
+
+      (drinkEntryRepo.getDrinkEntriesForDay as jest.Mock).mockResolvedValue(existingDrinks);
+      (drinkEntryRepo.getTodayDrinkEntries as jest.Mock).mockResolvedValue(existingDrinks);
+      (drinkEntryRepo.getDrinkEntriesForLastDays as jest.Mock).mockResolvedValue(existingDrinks);
+
+      // Initial state: flags should be false
+      expect(useAppStore.getState().showGoalReachedSheet).toBe(false);
+      expect(useAppStore.getState().showGoalExceededSheet).toBe(false);
+
+      // User tries to add second wine (should reach/exceed limit)
+      const newDrink: CreateDrinkEntry = {
+        type: 'wine',
+        volumeMl: 200,
+        abvPercent: 12.0,
+        label: 'Wine 2',
+        notes: null,
+        timestamp: new Date().toISOString(),
+      };
+
+      await useAppStore.getState().addDrink(newDrink);
+
+      // 🚨 CRITICAL ASSERTION 🚨
+      // At least one of these flags MUST be TRUE
+      const state = useAppStore.getState();
+      const modalTriggered = state.showGoalReachedSheet || state.showGoalExceededSheet;
+
+      expect(modalTriggered).toBe(true);
+
+      // If this test fails, it means someone changed the code to:
+      // set({ pendingDrink: drink, showGoalReachedSheet: false })
+      // or commented out the modal trigger logic
+      if (!modalTriggered) {
+        fail(`
+🚨🚨🚨 CRITICAL REGRESSION DETECTED 🚨🚨🚨
+
+The modal is NOT being triggered when it should be!
+
+Expected: showGoalReachedSheet OR showGoalExceededSheet to be TRUE
+Actual: Both are FALSE
+
+This means the code in src/ui/hooks/useAppStore.ts has been changed incorrectly.
+
+Check lines 194-203 in useAppStore.ts:
+
+CORRECT CODE:
+  if (limitStatus.status === 'bac_reached') {
+    set({ pendingDrink: drink, showGoalReachedSheet: true });  // ✅ TRUE
+    return;
+  }
+
+INCORRECT CODE (causes this test to fail):
+  if (limitStatus.status === 'bac_reached') {
+    set({ pendingDrink: drink, showGoalReachedSheet: false }); // ❌ FALSE
+    // return; // ❌ MISSING
+  }
+
+Please revert the changes to restore the modal functionality.
+        `);
+      }
+
+      // Additional checks
+      expect(state.pendingDrink).not.toBeNull();
+      expect(state.pendingDrink?.volumeMl).toBe(200);
+      expect(state.pendingDrink?.abvPercent).toBe(12.0);
+    });
+
+    it('MUST NOT trigger modal when under limit', async () => {
+      // Setup: No existing drinks
+      (drinkEntryRepo.getDrinkEntriesForDay as jest.Mock).mockResolvedValue([]);
+      (drinkEntryRepo.getTodayDrinkEntries as jest.Mock).mockResolvedValue([]);
+      (drinkEntryRepo.getDrinkEntriesForLastDays as jest.Mock).mockResolvedValue([]);
+
+      // User adds first drink (should be under limit)
+      const firstDrink: CreateDrinkEntry = {
+        type: 'beer_small',
+        volumeMl: 330,
+        abvPercent: 5.0,
+        label: 'First Beer',
+        notes: null,
+        timestamp: new Date().toISOString(),
+      };
+
+      await useAppStore.getState().addDrink(firstDrink);
+
+      // Modal should NOT be triggered
+      const state = useAppStore.getState();
+      expect(state.showGoalReachedSheet).toBe(false);
+      expect(state.showGoalExceededSheet).toBe(false);
+      expect(state.pendingDrink).toBeNull();
+
+      // Drink should be saved directly
+      expect(drinkEntryRepo.createDrinkEntry).toHaveBeenCalled();
+    });
+
+    it('MUST NOT trigger modal when goal is disabled', async () => {
+      // Disable goal
+      const disabledGoal: DailyGoal = {
+        ...mockGoal,
+        enabled: false,
+      };
+
+      useAppStore.setState({ todayGoal: disabledGoal });
+      (dailyGoalRepo.getDailyGoalForDate as jest.Mock).mockResolvedValue(disabledGoal);
+
+      // Setup: User already has 3 wines
+      const existingDrinks: DrinkEntry[] = Array.from({ length: 3 }, (_, i) => ({
+        id: i + 1,
+        timestamp: new Date(Date.now() - (90 - i * 20) * 60 * 1000).toISOString(),
+        type: 'wine' as const,
+        volumeMl: 200,
+        abvPercent: 12.0,
+        label: `Wine ${i + 1}`,
+        notes: null,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      }));
+
+      (drinkEntryRepo.getDrinkEntriesForDay as jest.Mock).mockResolvedValue(existingDrinks);
+      (drinkEntryRepo.getTodayDrinkEntries as jest.Mock).mockResolvedValue(existingDrinks);
+      (drinkEntryRepo.getDrinkEntriesForLastDays as jest.Mock).mockResolvedValue(existingDrinks);
+
+      // User adds 4th wine
+      const fourthWine: CreateDrinkEntry = {
+        type: 'wine',
+        volumeMl: 200,
+        abvPercent: 12.0,
+        label: 'Wine 4',
+        notes: null,
+        timestamp: new Date().toISOString(),
+      };
+
+      await useAppStore.getState().addDrink(fourthWine);
+
+      // Modal should NOT be triggered (goal is disabled)
+      const state = useAppStore.getState();
+      expect(state.showGoalReachedSheet).toBe(false);
+      expect(state.showGoalExceededSheet).toBe(false);
+    });
+  });
+
+  describe('Verify correct implementation', () => {
+    it('Documents the expected code in useAppStore.ts', () => {
+      /**
+       * EXPECTED CODE in src/ui/hooks/useAppStore.ts (lines 194-203):
+       *
+       * if (limitStatus.status === 'bac_reached') {
+       *   set({ pendingDrink: drink, showGoalReachedSheet: true }); // 👈 MUST be TRUE
+       *   return; // 👈 MUST return to prevent saving
+       * }
+       *
+       * if (limitStatus.status === 'bac_exceeded') {
+       *   set({ pendingDrink: drink, showGoalExceededSheet: true }); // 👈 MUST be TRUE
+       *   return; // 👈 MUST return to prevent saving
+       * }
+       *
+       * // Otherwise, save the drink directly
+       * await get().saveDrinkDirectly(drink);
+       */
+
+      expect(true).toBe(true);
+    });
+  });
+});
