@@ -14,6 +14,7 @@ export const featureFlags = {
   // Navigation Tabs
   calendarTab: true,         // Calendar tab in bottom navigation
   statisticsTab: true,       // Statistics tab in bottom navigation
+  examplesTab: __DEV__,      // Examples/Storybook tab (dev only)
 
   // Home Screen Features
   pastSessionsList: false,   // Show past sessions on home screen (moved to calendar)

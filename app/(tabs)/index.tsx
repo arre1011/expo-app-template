@@ -382,6 +382,16 @@ export default function SessionScreen() {
             </TouchableOpacity>
           </View>
         )}
+
+        {/* Inline Add Drink Button */}
+        <TouchableOpacity
+          style={styles.addDrinkInline}
+          onPress={handleAddDrink}
+          activeOpacity={0.8}
+        >
+          <Ionicons name="add-circle-outline" size={22} color={colors.textOnPrimary} />
+          <Text style={styles.addDrinkInlineText}>ADD DRINK</Text>
+        </TouchableOpacity>
       </ScrollView>
 
       {/* Bottom Add Drink Bar */}
@@ -476,7 +486,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.text,
+    backgroundColor: 'red',
     borderRadius: borderRadius.md,
     paddingVertical: spacing.md,
     gap: spacing.sm,
@@ -558,5 +568,21 @@ const styles = StyleSheet.create({
     fontSize: fontSize.md,
     fontWeight: fontWeight.medium,
     color: colors.text,
+  },
+  addDrinkInline: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'pink',
+    borderRadius: borderRadius.md,
+    paddingVertical: spacing.sm,
+    gap: spacing.xs,
+    marginTop: spacing.xl,
+  },
+  addDrinkInlineText: {
+    fontSize: fontSize.md,
+    fontWeight: fontWeight.semibold,
+    color: colors.textOnPrimary,
+    letterSpacing: 0.5,
   },
 });

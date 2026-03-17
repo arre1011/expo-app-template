@@ -21,7 +21,8 @@ export function IntroEmotionalScreen({ onNext, onBack, progress }: OnboardingScr
         <View style={[styles.iconContainer, { backgroundColor: `${colors.yellow}15` }]}>
           <Ionicons name="sunny-outline" size={80} color={colors.yellow} />
         </View>
-        <Text style={styles.title}>Less hangover{'\n'}More weekend</Text>
+        <Text style={styles.screenLabel}>Onboarding-Screen 1</Text>
+        <Text style={styles.title}>Less Gym{'\n'}More Gain</Text>
         <Text style={styles.description}>
           Still drinking — just smarter about it{'\n'}Many people want the weekend — not the aftermath
         </Text>
@@ -44,6 +45,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     alignSelf: 'center',
     marginBottom: spacing.xl,
+  },
+  screenLabel: {
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.medium,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: spacing.sm,
   },
   title: {
     fontSize: 32,
