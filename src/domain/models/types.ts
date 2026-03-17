@@ -171,18 +171,19 @@ export interface PeriodStats {
   overLimitDays: number; // days where limit was exceeded
 }
 
-// Calendar Day Status
-export type DayStatus = 'sober' | 'moderate' | 'over_limit' | 'no_data';
+// Calendar Day Status (based on mood)
+export type DayStatus = 'good' | 'moderate' | 'bad' | 'no_data';
 
 // Journal Entry Types
-export type MoodType = 'very_happy' | 'happy' | 'neutral' | 'sad' | 'very_sad';
+export type MoodType = 'good' | 'moderate' | 'bad';
+
+export const MOOD_DEFAULT: MoodType = 'good';
 
 export interface JournalEntry {
   id: number;
   date: string; // YYYY-MM-DD format
-  content: string | null; // Freitext-Notiz
-  mood: MoodType | null; // Stimmung als Emoji
-  sleepQuality: number | null; // 1-5 Sterne
+  content: string | null;
+  mood: MoodType | null;
   createdAt: string;
   updatedAt: string;
 }

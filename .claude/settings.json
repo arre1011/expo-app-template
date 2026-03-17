@@ -3,6 +3,9 @@
     "deny": [
       "Read(./NOTE.md)",
       "Edit(./NOTE.md)"
+    ],
+    "allow": [
+      "Bash(npx tsc:*)"
     ]
   }
 }

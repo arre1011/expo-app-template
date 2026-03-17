@@ -10,19 +10,18 @@ const MONTH_WIDTH = (SCREEN_WIDTH - spacing.lg * 2 - spacing.sm * 2) / 3;
 
 interface MiniMonthProps {
   year: number;
-  month: number; // 1-12
-  dayData?: Map<string, DayStatus>; // dateString -> status
+  month: number;
+  dayData?: Map<string, DayStatus>;
   onPress: () => void;
   isCurrentMonth?: boolean;
 }
 
 const statusColors: Record<DayStatus, string> = {
-  sober: colors.soberSoft,
+  good: colors.soberSoft,
   moderate: colors.moderateSoft,
-  over_limit: colors.overLimitSoft,
+  bad: colors.overLimitSoft,
   no_data: colors.transparent,
 };
-
 
 export const MiniMonth = memo(function MiniMonth({
   year,
@@ -32,40 +31,22 @@ export const MiniMonth = memo(function MiniMonth({
   isCurrentMonth,
 }: MiniMonthProps) {
   const firstDay = startOfMonth(new Date(year, month - 1));
-  // Get number of days in month by getting day 0 of next month
   const daysInMonth = new Date(year, month, 0).getDate();
   const firstDayWeekday = getDay(firstDay);
-  // Adjust for Monday start (0 = Monday, 6 = Sunday)
   const paddingDays = firstDayWeekday === 0 ? 6 : firstDayWeekday - 1;
 
   const monthName = format(firstDay, 'MMM', { locale: enUS });
 
-  // Generate day numbers
   const days: (number | null)[] = [];
-  for (let i = 0; i < paddingDays; i++) {
-    days.push(null);
-  }
-  for (let i = 1; i <= daysInMonth; i++) {
-    days.push(i);
-  }
-
-  // Pad to complete rows (7 days per row)
-  while (days.length % 7 !== 0) {
-    days.push(null);
-  }
+  for (let i = 0; i < paddingDays; i++) days.push(null);
+  for (let i = 1; i <= daysInMonth; i++) days.push(i);
+  while (days.length % 7 !== 0) days.push(null);
 
   return (
-    <TouchableOpacity
-      style={styles.container}
-      onPress={onPress}
-      activeOpacity={0.7}
-    >
-      {/* Month Name */}
+    <TouchableOpacity style={styles.container} onPress={onPress} activeOpacity={0.7}>
       <Text style={[styles.monthName, isCurrentMonth && styles.currentMonthName]}>
         {monthName}
       </Text>
-
-      {/* Days Grid */}
       <View style={styles.daysGrid}>
         {days.map((day, index) => {
           if (day === null) {
@@ -76,8 +57,6 @@ export const MiniMonth = memo(function MiniMonth({
           const dateString = format(date, 'yyyy-MM-dd');
           const status = dayData?.get(dateString) || 'no_data';
           const isTodayDate = isToday(date);
-
-          // Check if date is in the future
           const today = new Date();
           today.setHours(23, 59, 59, 999);
           const isFutureDate = date > today;
@@ -143,8 +122,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  todayCircle: {
-  },
+  todayCircle: {},
   dayText: {
     fontSize: 8,
     fontWeight: fontWeight.medium,

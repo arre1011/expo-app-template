@@ -47,8 +47,7 @@ export const CREATE_JOURNAL_ENTRY_TABLE = `
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     date TEXT NOT NULL UNIQUE,
     content TEXT,
-    mood TEXT,
-    sleep_quality INTEGER,
+    mood TEXT DEFAULT 'good',
     created_at TEXT NOT NULL DEFAULT (datetime('now')),
     updated_at TEXT NOT NULL DEFAULT (datetime('now'))
   );

@@ -3,10 +3,10 @@ import { View, Text, StyleSheet } from 'react-native';
 import { colors, spacing, fontSize, fontWeight } from '../theme';
 
 export interface DayStats {
-  sober: number;
+  good: number;
   moderate: number;
-  overLimit: number;
-  total: number; // Total days with data (excluding future/no_data)
+  bad: number;
+  total: number;
 }
 
 interface CalendarLegendProps {
@@ -23,31 +23,20 @@ export const CalendarLegend = memo(function CalendarLegend({
   return (
     <View style={styles.container}>
       <View style={styles.legendRow}>
-        {/* Sober */}
         <View style={styles.legendItem}>
           <View style={[styles.legendDot, { backgroundColor: colors.soberSoft }]} />
-          <Text style={styles.legendLabel}>Sober</Text>
-          {showStats && (
-            <Text style={styles.legendCount}>{stats.sober}</Text>
-          )}
+          <Text style={styles.legendLabel}>Good</Text>
+          {showStats && <Text style={styles.legendCount}>{stats.good}</Text>}
         </View>
-
-        {/* Moderate */}
         <View style={styles.legendItem}>
           <View style={[styles.legendDot, { backgroundColor: colors.moderateSoft }]} />
           <Text style={styles.legendLabel}>Moderate</Text>
-          {showStats && (
-            <Text style={styles.legendCount}>{stats.moderate}</Text>
-          )}
+          {showStats && <Text style={styles.legendCount}>{stats.moderate}</Text>}
         </View>
-
-        {/* Over Limit */}
         <View style={styles.legendItem}>
           <View style={[styles.legendDot, { backgroundColor: colors.overLimitSoft }]} />
-          <Text style={styles.legendLabel}>Over limit</Text>
-          {showStats && (
-            <Text style={styles.legendCount}>{stats.overLimit}</Text>
-          )}
+          <Text style={styles.legendLabel}>Bad</Text>
+          {showStats && <Text style={styles.legendCount}>{stats.bad}</Text>}
         </View>
       </View>
     </View>
