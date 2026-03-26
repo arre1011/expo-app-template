@@ -1,15 +1,10 @@
 import { getDatabase } from '../database/connection';
-import { UserProfile, CreateUserProfile, UpdateUserProfile, WeightUnit, VolumeUnit, BACUnit, Sex } from '../../domain/models/types';
+import { UserProfile, CreateUserProfile, UpdateUserProfile } from '../../domain/models/types';
 
 interface UserProfileRow {
   id: number;
-  weight_kg: number;
-  sex: string | null;
-  body_water_constant_r: number;
-  elimination_rate_permille_per_hour: number;
-  weight_unit: string;
-  volume_unit: string;
-  bac_unit: string;
+  display_name: string | null;
+  onboarding_completed: number;
   created_at: string;
   updated_at: string;
 }
@@ -17,13 +12,8 @@ interface UserProfileRow {
 function mapRowToUserProfile(row: UserProfileRow): UserProfile {
   return {
     id: row.id,
-    weightKg: row.weight_kg,
-    sex: row.sex as Sex,
-    bodyWaterConstantR: row.body_water_constant_r,
-    eliminationRatePermillePerHour: row.elimination_rate_permille_per_hour,
-    weightUnit: (row.weight_unit as WeightUnit) || 'lb',
-    volumeUnit: (row.volume_unit as VolumeUnit) || 'oz',
-    bacUnit: (row.bac_unit as BACUnit) || 'percent',
+    displayName: row.display_name,
+    onboardingCompleted: row.onboarding_completed === 1,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -53,16 +43,11 @@ export async function createUserProfile(profile: CreateUserProfile): Promise<Use
   const now = new Date().toISOString();
 
   const result = await db.runAsync(
-    `INSERT INTO user_profile (weight_kg, sex, body_water_constant_r, elimination_rate_permille_per_hour, weight_unit, volume_unit, bac_unit, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO user_profile (display_name, onboarding_completed, created_at, updated_at)
+     VALUES (?, ?, ?, ?)`,
     [
-      profile.weightKg,
-      profile.sex,
-      profile.bodyWaterConstantR,
-      profile.eliminationRatePermillePerHour,
-      profile.weightUnit || 'lb',
-      profile.volumeUnit || 'oz',
-      profile.bacUnit || 'percent',
+      profile.displayName,
+      profile.onboardingCompleted ? 1 : 0,
       now,
       now,
     ]
@@ -71,9 +56,6 @@ export async function createUserProfile(profile: CreateUserProfile): Promise<Use
   return {
     id: result.lastInsertRowId,
     ...profile,
-    weightUnit: profile.weightUnit || 'lb',
-    volumeUnit: profile.volumeUnit || 'oz',
-    bacUnit: profile.bacUnit || 'percent',
     createdAt: now,
     updatedAt: now,
   };
@@ -93,33 +75,13 @@ export async function updateUserProfile(
   const fields: string[] = [];
   const values: (string | number | null)[] = [];
 
-  if (updates.weightKg !== undefined) {
-    fields.push('weight_kg = ?');
-    values.push(updates.weightKg);
+  if (updates.displayName !== undefined) {
+    fields.push('display_name = ?');
+    values.push(updates.displayName);
   }
-  if (updates.sex !== undefined) {
-    fields.push('sex = ?');
-    values.push(updates.sex);
-  }
-  if (updates.bodyWaterConstantR !== undefined) {
-    fields.push('body_water_constant_r = ?');
-    values.push(updates.bodyWaterConstantR);
-  }
-  if (updates.eliminationRatePermillePerHour !== undefined) {
-    fields.push('elimination_rate_permille_per_hour = ?');
-    values.push(updates.eliminationRatePermillePerHour);
-  }
-  if (updates.weightUnit !== undefined) {
-    fields.push('weight_unit = ?');
-    values.push(updates.weightUnit);
-  }
-  if (updates.volumeUnit !== undefined) {
-    fields.push('volume_unit = ?');
-    values.push(updates.volumeUnit);
-  }
-  if (updates.bacUnit !== undefined) {
-    fields.push('bac_unit = ?');
-    values.push(updates.bacUnit);
+  if (updates.onboardingCompleted !== undefined) {
+    fields.push('onboarding_completed = ?');
+    values.push(updates.onboardingCompleted ? 1 : 0);
   }
 
   if (fields.length === 0) {

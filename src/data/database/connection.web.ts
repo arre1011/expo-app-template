@@ -44,7 +44,6 @@ class WebDatabase {
 
   constructor() {
     this.data = getStorageData();
-    // Initialize next IDs based on existing data
     if (this.data.userProfile) {
       this.nextId.userProfile = this.data.userProfile.id + 1;
     }
@@ -65,10 +64,8 @@ class WebDatabase {
       const now = new Date().toISOString();
       this.data.userProfile = {
         id,
-        weight_kg: params[0],
-        sex: params[1],
-        body_water_constant_r: params[2],
-        elimination_rate_permille_per_hour: params[3],
+        display_name: params[0],
+        onboarding_completed: params[1],
         created_at: now,
         updated_at: now,
       };

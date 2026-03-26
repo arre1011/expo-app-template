@@ -5,13 +5,8 @@ export const SCHEMA_VERSION = 1;
 export const CREATE_USER_PROFILE_TABLE = `
   CREATE TABLE IF NOT EXISTS user_profile (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    weight_kg REAL NOT NULL,
-    sex TEXT,
-    body_water_constant_r REAL NOT NULL,
-    elimination_rate_permille_per_hour REAL NOT NULL,
-    weight_unit TEXT NOT NULL DEFAULT 'lb',
-    volume_unit TEXT NOT NULL DEFAULT 'oz',
-    bac_unit TEXT NOT NULL DEFAULT 'percent',
+    display_name TEXT,
+    onboarding_completed INTEGER NOT NULL DEFAULT 0,
     created_at TEXT NOT NULL DEFAULT (datetime('now')),
     updated_at TEXT NOT NULL DEFAULT (datetime('now'))
   );

@@ -1,10 +1,3 @@
-export type WeightUnit = 'kg' | 'lb';
-export type VolumeUnit = 'ml' | 'oz';
-export type BACUnit = 'permille' | 'percent';
-
-// The template still uses the existing profile table for onboarding gates.
-export type Sex = 'male' | 'female' | 'other' | null;
-
 export type UserMotivation =
   | 'save_time'
   | 'build_routine'
@@ -23,13 +16,8 @@ export interface UserMotivations {
 
 export interface UserProfile {
   id: number;
-  weightKg: number;
-  sex: Sex;
-  bodyWaterConstantR: number;
-  eliminationRatePermillePerHour: number;
-  weightUnit: WeightUnit;
-  volumeUnit: VolumeUnit;
-  bacUnit: BACUnit;
+  displayName: string | null;
+  onboardingCompleted: boolean;
   createdAt: string;
   updatedAt: string;
 }

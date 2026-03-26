@@ -56,17 +56,10 @@ export default function OnboardingScreen() {
   const ensureTemplateProfile = async () => {
     if (profile) return;
 
-    const templateProfile = {
-      weightKg: 75,
-      sex: 'other' as const,
-      bodyWaterConstantR: 0.60,
-      eliminationRatePermillePerHour: 0.15,
-      weightUnit: 'lb' as const,
-      volumeUnit: 'oz' as const,
-      bacUnit: 'percent' as const,
-    };
-
-    await saveProfile(templateProfile);
+    await saveProfile({
+      displayName: null,
+      onboardingCompleted: true,
+    });
   };
 
   // ─── Navigation ──────────────────────────────────────
