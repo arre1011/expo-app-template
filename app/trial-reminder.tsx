@@ -31,7 +31,7 @@ export default function TrialReminderScreen() {
   const subscriptionStatus = useSubscriptionStatus();
 
   useEffect(() => {
-    posthog.capture(AnalyticsEvents.WRAP_UP_VIEWED);
+    posthog.capture('wrap_up_viewed');
   }, []);
 
   const getDaysRemaining = (): number | null => {

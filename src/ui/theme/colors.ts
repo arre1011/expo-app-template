@@ -55,7 +55,7 @@ export const colors = {
   // Onboarding/Feature colors
   info: '#3B82F6',           // Blue - trust, personalization
   infoLight: '#DBEAFE',      // Light blue background
-  wine: '#8B5CF6',           // Purple - premium, drink theme
+  wine: '#8B5CF6',           // Purple - premium accent
   wineLight: '#EDE9FE',      // Light purple background
   yellow: '#FDE047',         // Bright sunny yellow - positive, welcoming
   yellowLight: '#FEF9C3',    // Light yellow background

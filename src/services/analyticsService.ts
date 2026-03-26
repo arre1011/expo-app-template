@@ -26,7 +26,6 @@ export const AnalyticsEvents = {
   DEEP_LINK_MATCHED: 'deep_link_matched',
   DEEP_LINK_OFFER_APPLIED: 'deep_link_offer_applied',
   NOTIFICATION_RECEIVED: 'notification_received',
-  WRAP_UP_VIEWED: 'wrap_up_viewed',
 } as const;
 
 export type AnalyticsEvent = typeof AnalyticsEvents[keyof typeof AnalyticsEvents];

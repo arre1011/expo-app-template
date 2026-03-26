@@ -5,8 +5,6 @@ import { router } from 'expo-router';
 import { colors } from '../src/ui/theme';
 import { useProfileStore } from '../src/ui/hooks/useProfileStore';
 import { useOfferStore } from '../src/ui/hooks/useOfferStore';
-import { getRValueForSex, BAC_CONSTANTS } from '../src/domain/constants/defaults';
-import { validateUserProfile } from '../src/domain/services/validation';
 import { UserMotivation } from '../src/domain/models/types';
 import { saveUserMotivations } from '../src/data/repositories/userMotivationsRepository';
 import { featureFlags } from '../src/config/featureFlags';
@@ -61,17 +59,12 @@ export default function OnboardingScreen() {
     const templateProfile = {
       weightKg: 75,
       sex: 'other' as const,
-      bodyWaterConstantR: getRValueForSex('other'),
-      eliminationRatePermillePerHour: BAC_CONSTANTS.ELIMINATION_RATE_STANDARD,
+      bodyWaterConstantR: 0.60,
+      eliminationRatePermillePerHour: 0.15,
       weightUnit: 'lb' as const,
       volumeUnit: 'oz' as const,
       bacUnit: 'percent' as const,
     };
-
-    const validation = validateUserProfile(templateProfile);
-    if (!validation.isValid) {
-      throw new Error(validation.errors.join('\n'));
-    }
 
     await saveProfile(templateProfile);
   };
