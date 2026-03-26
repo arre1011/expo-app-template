@@ -8,13 +8,13 @@ import { UserMotivation } from '../../../domain/models/types';
 import type { MotivationSelectScreenProps } from './types';
 
 const MOTIVATION_OPTIONS: { id: UserMotivation; label: string; icon: keyof typeof Ionicons.glyphMap; color: string }[] = [
-  { id: 'active_weekends', label: 'Enjoy active, hangover-free weekends', icon: 'sunny-outline', color: colors.yellow },
-  { id: 'healthier_lifestyle', label: 'Live a healthier lifestyle', icon: 'heart-outline', color: colors.error },
-  { id: 'mental_health', label: 'Improve my mental wellbeing', icon: 'happy-outline', color: colors.warning },
-  { id: 'physical_health', label: 'Boost my physical health', icon: 'fitness-outline', color: colors.success },
-  { id: 'productivity', label: 'Increase my productivity', icon: 'trending-up-outline', color: colors.info },
-  { id: 'regain_control', label: 'Strengthen control over my choices', icon: 'shield-checkmark-outline', color: colors.wine },
-  { id: 'mindful_consumption', label: 'Drink more consciously and mindfully', icon: 'leaf-outline', color: colors.success },
+  { id: 'save_time', label: 'Save time and mental overhead', icon: 'timer-outline', color: colors.warning },
+  { id: 'build_routine', label: 'Build a stronger routine', icon: 'repeat-outline', color: colors.primary },
+  { id: 'reduce_stress', label: 'Reduce friction and stress', icon: 'leaf-outline', color: colors.success },
+  { id: 'feel_better', label: 'Feel better day to day', icon: 'happy-outline', color: colors.yellow },
+  { id: 'improve_focus', label: 'Improve focus and clarity', icon: 'flash-outline', color: colors.info },
+  { id: 'stay_consistent', label: 'Stay consistent over time', icon: 'checkmark-done-outline', color: colors.success },
+  { id: 'reach_personal_goal', label: 'Reach a personal goal faster', icon: 'flag-outline', color: colors.wine },
 ];
 
 export function MotivationSelectScreen({ onBack, progress, selectedMotivations, onMotivationToggle, onMotivationsSubmit }: MotivationSelectScreenProps) {
@@ -29,8 +29,8 @@ export function MotivationSelectScreen({ onBack, progress, selectedMotivations, 
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        <Text style={styles.title}>Your Motivation</Text>
-        <Text style={styles.subtitle}>Select all that apply</Text>
+        <Text style={styles.title}>Motivation Placeholder</Text>
+        <Text style={styles.subtitle}>Swap these with the reasons your users actually care about.</Text>
 
         <View style={styles.list}>
           {MOTIVATION_OPTIONS.map((option) => {

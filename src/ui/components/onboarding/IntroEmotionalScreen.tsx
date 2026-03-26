@@ -10,7 +10,7 @@ export function IntroEmotionalScreen({ onNext, onBack, progress }: OnboardingScr
   return (
     <OnboardingLayout progress={progress} onBack={onBack} footer={
       <Button
-        title="That's exactly it"
+        title="Continue"
         onPress={onNext}
         size="large"
         style={styles.button}
@@ -21,10 +21,11 @@ export function IntroEmotionalScreen({ onNext, onBack, progress }: OnboardingScr
         <View style={[styles.iconContainer, { backgroundColor: `${colors.yellow}15` }]}>
           <Ionicons name="sunny-outline" size={80} color={colors.yellow} />
         </View>
-        <Text style={styles.screenLabel}>Onboarding-Screen 1</Text>
-        <Text style={styles.title}>Less Gym{'\n'}More Gain</Text>
+        <Text style={styles.screenLabel}>Screen 1</Text>
+        <Text style={styles.title}>Emotional Hook Placeholder</Text>
         <Text style={styles.description}>
-          Still drinking — just smarter about it{'\n'}Many people want the weekend — not the aftermath
+          Replace this with the core feeling your app sells.
+          Lead with emotion first, not explanation. The best version of this screen makes the user feel understood in under five seconds.
         </Text>
       </View>
     </OnboardingLayout>

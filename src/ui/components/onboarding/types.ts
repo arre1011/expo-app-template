@@ -1,20 +1,13 @@
-import { Sex, UserMotivation } from '../../../domain/models/types';
-import { WeightUnit } from '../../../domain/utils/weightConversion';
-import { VolumeUnit } from '../../../domain/utils/volumeConversion';
+import { UserMotivation } from '../../../domain/models/types';
 
 /** All possible onboarding step identifiers */
 export type OnboardingStep =
   | 'intro_emotional'
   | 'intro_influencer'
-  | 'intro_not'
-  | 'intro_benefits'
-  | 'how_monitoring'
-  | 'profile_limit'
-  | 'profile_sex'
-  | 'profile_weight'
-  | 'profile_volume'
+  | 'science_based'
+  | 'personalization'
   | 'motivation_select'
-  | 'motivation_partner'
+  | 'pre_paywall_hook'
   | 'paywall';
 
 /** Base props every onboarding screen receives */
@@ -24,33 +17,13 @@ export interface OnboardingScreenProps {
   progress: { current: number; total: number };
 }
 
-/** Props for ProfileSexScreen */
-export interface ProfileSexScreenProps extends OnboardingScreenProps {
-  sex: Sex;
-  onSexChange: (value: Sex) => void;
-}
+export type PersonalizationOption = 'guided' | 'focused' | 'lightweight';
 
-/** Props for ProfileWeightScreen */
-export interface ProfileWeightScreenProps extends OnboardingScreenProps {
-  weightKg: number;
-  weightUnit: WeightUnit;
-  onWeightValueChange: (valueKg: number) => void;
-  onWeightUnitChange: (unit: WeightUnit) => void;
-}
-
-/** Props for ProfileVolumeScreen */
-export interface ProfileVolumeScreenProps extends OnboardingScreenProps {
-  volumeUnit: VolumeUnit;
-  onVolumeUnitChange: (unit: VolumeUnit) => void;
-  onSubmitProfile: () => void;
-  isLoading: boolean;
-}
-
-/** Props for ProfileLimitScreen */
-export interface ProfileLimitScreenProps extends OnboardingScreenProps {
-  selectedGoalPreset: string;
-  onGoalPresetSelect: (presetId: string) => void;
-  onGoalSubmit: () => void;
+/** Props for PersonalizationScreen */
+export interface PersonalizationScreenProps extends OnboardingScreenProps {
+  selectedOption: PersonalizationOption;
+  onOptionSelect: (option: PersonalizationOption) => void;
+  onSubmit: () => void;
 }
 
 /** Props for MotivationSelectScreen */

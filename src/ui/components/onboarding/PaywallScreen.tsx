@@ -4,6 +4,7 @@ import { PaywallContent } from '../PaywallContent';
 import type { PaywallVariantConfig } from '../PaywallContent';
 import { useOfferStore } from '../../hooks/useOfferStore';
 import { posthog, AnalyticsEvents } from '../../../services/analyticsService';
+import { appConfig } from '../../../config/appConfig';
 import type { OnboardingScreenProps } from './types';
 
 export function PaywallScreen({ onBack }: OnboardingScreenProps) {
@@ -14,9 +15,9 @@ export function PaywallScreen({ onBack }: OnboardingScreenProps) {
   if (isStandard) {
     return (
       <PaywallContent
-        title={"Start your active,\nhangover-free weekends now."}
+        title={`Unlock the full\n${appConfig.appName} template`}
         subtitle="7-day free trial"
-        showBackButton={true}
+        showBackButton={false}
         onPurchaseSuccess={() => {
           posthog.capture(AnalyticsEvents.ONBOARDING_COMPLETED);
           router.replace('/(tabs)');
@@ -38,7 +39,7 @@ export function PaywallScreen({ onBack }: OnboardingScreenProps) {
     ? (offerStore.influencerName
         ? `Your exclusive offer\nfrom @${offerStore.influencerName}`
         : 'Your exclusive offer')
-    : 'Your gift is ready.';
+    : 'Your template offer is ready.';
 
   return (
     <PaywallContent

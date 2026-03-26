@@ -9,114 +9,56 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, spacing, fontSize, fontWeight } from '../../src/ui/theme';
 import { Card } from '../../src/ui/components';
+import { appConfig } from '../../src/config/appConfig';
+import { colors, spacing, fontSize, fontWeight } from '../../src/ui/theme';
 
 export default function PrivacyPolicyModal() {
-  const handleClose = () => {
-    router.replace('/(tabs)/settings');
-  };
-
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={handleClose} style={styles.closeButton}>
+        <TouchableOpacity onPress={() => router.replace('/(tabs)/settings')} style={styles.closeButton}>
           <Ionicons name="close" size={28} color={colors.text} />
         </TouchableOpacity>
-        <Text style={styles.title}>Privacy Policy</Text>
+        <Text style={styles.title}>Privacy Placeholder</Text>
         <View style={styles.placeholder} />
       </View>
 
       <ScrollView style={styles.content} contentContainerStyle={styles.scrollContent}>
         <Card style={styles.highlightCard}>
           <View style={styles.highlightHeader}>
-            <Ionicons name="lock-closed" size={32} color={colors.primary} />
-            <Text style={styles.highlightTitle}>Your data stays local</Text>
+            <Ionicons name="alert-circle-outline" size={32} color={colors.warning} />
+            <Text style={styles.highlightTitle}>Replace before release</Text>
           </View>
           <Text style={styles.highlightText}>
-            All your data is stored exclusively on your device.
-            No data is transferred to servers or third parties.
+            This template screen is intentionally generic. Review it against the real data flows of {appConfig.appName} before shipping.
           </Text>
         </Card>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>What data is stored?</Text>
+          <Text style={styles.sectionTitle}>What this template may store</Text>
           <Card style={styles.card}>
-            <View style={styles.dataItem}>
-              <Ionicons name="person-outline" size={20} color={colors.textSecondary} />
-              <Text style={styles.dataText}>
-                <Text style={styles.dataBold}>Profile data:</Text> Weight, sex, metabolism rate
-              </Text>
-            </View>
-            <View style={styles.dataItem}>
-              <Ionicons name="wine-outline" size={20} color={colors.textSecondary} />
-              <Text style={styles.dataText}>
-                <Text style={styles.dataBold}>Drink logs:</Text> Time, amount, alcohol content
-              </Text>
-            </View>
-            <View style={styles.dataItem}>
-              <Ionicons name="settings-outline" size={20} color={colors.textSecondary} />
-              <Text style={styles.dataText}>
-                <Text style={styles.dataBold}>Settings:</Text> Daily goals, alcohol level limit
-              </Text>
-            </View>
+            <Text style={styles.bodyText}>Local app data such as onboarding choices, notes, calendar entries, and settings.</Text>
+            <Text style={styles.bodyText}>Subscription metadata handled through RevenueCat when subscriptions are enabled.</Text>
+            <Text style={styles.bodyText}>Reminder scheduling metadata for trial wrap-up notifications.</Text>
           </Card>
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Where is the data stored?</Text>
+          <Text style={styles.sectionTitle}>Potential third-party services</Text>
           <Text style={styles.bodyText}>
-            All data is stored in a local SQLite database on your smartphone.
-            This database is only accessible to this app and is not shared with other apps.
+            This codebase includes integrations such as RevenueCat, Sentry, and PostHog. Depending on your configuration, these may process subscription, diagnostics, or analytics data.
           </Text>
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Is any data transmitted?</Text>
-          <Text style={styles.bodyText}>
-            No. This app does not send data to servers, cloud services, or third parties.
-            There is no synchronization, no tracking, and no analytics.
-            The app works completely offline.
-          </Text>
-        </View>
-
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>What happens when I delete the app?</Text>
-          <Text style={styles.bodyText}>
-            When you uninstall the app, all data is automatically removed from your device.
-            There are no backups or copies outside of your device.
-          </Text>
-        </View>
-
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Analytics and Tracking</Text>
-          <Text style={styles.bodyText}>
-            This app does not use analytics tools, tracking pixels, or similar technologies.
-            We do not collect usage data and do not create user profiles.
-          </Text>
-        </View>
-
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Permissions</Text>
-          <Text style={styles.bodyText}>
-            The app does not require special permissions. Optionally, notifications can be
-            enabled for reminders – this is voluntary and can be disabled at any time
-            in your system settings.
-          </Text>
-        </View>
-
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Contact</Text>
-          <Text style={styles.bodyText}>
-            For privacy questions, you can contact the app developer.
-            This app is an open-source project for harm reduction.
-          </Text>
+          <Text style={styles.sectionTitle}>Developer checklist</Text>
+          <Text style={styles.bodyText}>Update support contact, legal URLs, notification copy, and the actual list of collected data.</Text>
+          <Text style={styles.bodyText}>Remove any claim that is not true for the shipped product.</Text>
         </View>
 
         <View style={styles.footer}>
-          <Text style={styles.footerText}>
-            Last updated: January 2025
-          </Text>
+          <Text style={styles.footerText}>Support: {appConfig.supportEmail}</Text>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -157,19 +99,19 @@ const styles = StyleSheet.create({
   },
   highlightCard: {
     padding: spacing.lg,
-    backgroundColor: colors.primaryLight + '15',
+    backgroundColor: `${colors.warning}12`,
     marginBottom: spacing.xl,
   },
   highlightHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.md,
-    marginBottom: spacing.md,
+    marginBottom: spacing.sm,
   },
   highlightTitle: {
     fontSize: fontSize.xl,
     fontWeight: fontWeight.bold,
-    color: colors.primary,
+    color: colors.text,
   },
   highlightText: {
     fontSize: fontSize.md,
@@ -187,22 +129,7 @@ const styles = StyleSheet.create({
   },
   card: {
     padding: spacing.md,
-  },
-  dataItem: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: spacing.sm,
-    marginBottom: spacing.md,
-  },
-  dataText: {
-    flex: 1,
-    fontSize: fontSize.md,
-    color: colors.textSecondary,
-    lineHeight: 22,
-  },
-  dataBold: {
-    fontWeight: fontWeight.semibold,
-    color: colors.text,
+    gap: spacing.md,
   },
   bodyText: {
     fontSize: fontSize.md,
@@ -210,14 +137,13 @@ const styles = StyleSheet.create({
     lineHeight: 22,
   },
   footer: {
-    marginTop: spacing.xl,
+    marginTop: spacing.lg,
     paddingTop: spacing.lg,
     borderTopWidth: 1,
     borderTopColor: colors.border,
-    alignItems: 'center',
   },
   footerText: {
     fontSize: fontSize.sm,
-    color: colors.textLight,
+    color: colors.textSecondary,
   },
 });

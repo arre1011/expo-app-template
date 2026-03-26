@@ -27,6 +27,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import type { PurchasesPackage } from 'react-native-purchases';
 import { colors, spacing, fontSize, fontWeight, borderRadius } from '../theme';
+import { appConfig } from '../../config/appConfig';
 import {
   getOfferings,
   getOfferingById,
@@ -290,7 +291,7 @@ export function PaywallContent({
   // ─── CTA Button Text ──────────────────────────────────────
 
   const ctaButtonText = variant === 'gift'
-    ? 'Claim Your Gift'
+    ? 'Claim Offer'
     : variant === 'influencer_trial'
     ? 'Claim Offer'
     : 'Start Free Trial';
@@ -298,7 +299,7 @@ export function PaywallContent({
   // ─── Legal Text ────────────────────────────────────────────
 
   const legalText = variant === 'gift'
-    ? 'This gift grants you full access to GlassCount Premium. No payment required. You can manage your subscription anytime in your device settings.'
+    ? `This offer unlocks the full ${appConfig.appName} experience. No payment is required for this gift variant.`
     : `Your free trial starts today. You won't be charged until ${trialEndDateString}. Subscriptions auto-renew unless cancelled 24 hours before the trial ends. You can cancel anytime in your device settings or directly from this app.`;
 
   // ─── Get yearly price for gift header ──────────────────────
@@ -321,7 +322,7 @@ export function PaywallContent({
         )}
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={colors.primary} />
-          <Text style={styles.loadingText}>Loading subscription options...</Text>
+          <Text style={styles.loadingText}>Loading plans...</Text>
         </View>
       </View>
     );
@@ -365,9 +366,9 @@ export function PaywallContent({
           <View style={styles.giftHeader}>
             <View style={styles.giftBadge}>
               <Ionicons name="gift-outline" size={20} color={colors.success} />
-              <Text style={styles.giftBadgeText}>You have a gift!</Text>
+              <Text style={styles.giftBadgeText}>Template Offer</Text>
             </View>
-            <Text style={styles.giftAppName}>GlassCount Premium</Text>
+            <Text style={styles.giftAppName}>{appConfig.appName}</Text>
             {yearlyPackage && (
               <Text style={styles.giftOriginalPrice}>
                 {getPackagePrice(yearlyPackage)}/year
@@ -398,9 +399,9 @@ export function PaywallContent({
         {/* Benefits */}
         {featureFlags.paywallBenefits && (
           <View style={styles.features}>
-            <FeatureItem icon="pulse-outline" text="Benefit from real-time monitoring" iconColor={colors.warning} />
-            <FeatureItem icon="eye-outline" text="Build awareness of your drinking habits" iconColor={colors.info} />
-            <FeatureItem icon="flag-outline" text="Reach your personal goals" iconColor={colors.success} />
+            <FeatureItem icon="sparkles-outline" text="Use this section for your strongest product benefits" iconColor={colors.warning} />
+            <FeatureItem icon="layers-outline" text="Keep the value proposition simple and specific" iconColor={colors.info} />
+            <FeatureItem icon="flag-outline" text="Tie pricing back to the user's desired outcome" iconColor={colors.success} />
           </View>
         )}
 
@@ -409,7 +410,7 @@ export function PaywallContent({
           <View style={styles.trustSignals}>
             <View style={styles.trustSignalRow}>
               <Ionicons name="shield-checkmark-outline" size={18} color={colors.success} />
-              <Text style={styles.trustSignalText}><Text style={styles.trustSignalBold}>Cancel anytime</Text> — right from the app</Text>
+              <Text style={styles.trustSignalText}><Text style={styles.trustSignalBold}>Cancel anytime</Text> in your device subscription settings</Text>
             </View>
             <View style={styles.trustSignalRow}>
               <Ionicons name="notifications-outline" size={18} color={colors.success} />
@@ -423,7 +424,7 @@ export function PaywallContent({
           <View style={styles.giftTrustSignal}>
             <Ionicons name="shield-checkmark-outline" size={18} color={colors.success} />
             <Text style={styles.trustSignalText}>
-              <Text style={styles.trustSignalBold}>No subscription. No costs.</Text> — This is a gift.
+              <Text style={styles.trustSignalBold}>No subscription. No costs.</Text> This is a template offer variant.
             </Text>
           </View>
         )}
@@ -505,6 +506,12 @@ export function PaywallContent({
           </TouchableOpacity>
         )}
 
+        {__DEV__ && !featureFlags.subscriptionRequired && (
+          <TouchableOpacity onPress={onPurchaseSuccess} style={styles.devBypassButton}>
+            <Text style={styles.devBypassText}>Continue in development</Text>
+          </TouchableOpacity>
+        )}
+
         {/* Restore Purchases · Terms · Privacy Policy */}
         <View style={styles.secondaryActions}>
           <TouchableOpacity
@@ -521,14 +528,14 @@ export function PaywallContent({
           <Text style={styles.secondaryDot}>·</Text>
           <TouchableOpacity
             style={styles.secondaryActionButton}
-            onPress={() => Linking.openURL('https://drink-tracking-landingpage.vercel.app/terms.html')}
+            onPress={() => Linking.openURL(appConfig.legal.termsUrl)}
           >
             <Text style={styles.secondaryLink}>Terms</Text>
           </TouchableOpacity>
           <Text style={styles.secondaryDot}>·</Text>
           <TouchableOpacity
             style={styles.secondaryActionButton}
-            onPress={() => Linking.openURL('https://drink-tracking-landingpage.vercel.app/privacy.html')}
+            onPress={() => Linking.openURL(appConfig.legal.privacyUrl)}
           >
             <Text style={styles.secondaryLink}>Privacy Policy</Text>
           </TouchableOpacity>
@@ -844,6 +851,15 @@ const styles = StyleSheet.create({
     fontSize: fontSize.lg,
     fontWeight: fontWeight.bold,
     color: '#FFFFFF',
+  },
+  devBypassButton: {
+    alignSelf: 'center',
+    marginBottom: spacing.sm,
+  },
+  devBypassText: {
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
+    textDecorationLine: 'underline',
   },
 
   bottomSpacer: {

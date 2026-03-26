@@ -6,15 +6,15 @@ export type BACUnit = 'permille' | 'percent';
 // Sex Type - biological profile for BAC calculation
 export type Sex = 'male' | 'female' | 'other' | null;
 
-// User Motivation Types - reasons for using the app
+// User Motivation Types - generic onboarding motivations for the template
 export type UserMotivation =
-  | 'healthier_lifestyle'
-  | 'mental_health'
-  | 'physical_health'
-  | 'active_weekends'
-  | 'productivity'
-  | 'regain_control'
-  | 'mindful_consumption';
+  | 'save_time'
+  | 'build_routine'
+  | 'reduce_stress'
+  | 'feel_better'
+  | 'improve_focus'
+  | 'stay_consistent'
+  | 'reach_personal_goal';
 
 // User Motivations stored in DB
 export interface UserMotivations {

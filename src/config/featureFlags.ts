@@ -13,7 +13,7 @@ import type { OfferType } from '../ui/hooks/useOfferStore';
 export const featureFlags = {
   // Navigation Tabs
   calendarTab: true,         // Calendar tab in bottom navigation
-  statisticsTab: true,       // Statistics tab in bottom navigation
+  statisticsTab: false,      // Statistics tab in bottom navigation
   examplesTab: __DEV__,      // Examples/Storybook tab (dev only)
 
   // Home Screen Features
@@ -60,7 +60,7 @@ export const featureFlags = {
 //   devOfferOverride: 'gift',             ← Gift paywall (price struck through, FREE)
 //
 // ⚠️  ALWAYS set to null before building for production/TestFlight!
-export const devOfferOverride: OfferType | null = 'gift';
+export const devOfferOverride: OfferType | null = null;
 
 // Dev override configuration for influencer variant
 export const devOfferConfig = {

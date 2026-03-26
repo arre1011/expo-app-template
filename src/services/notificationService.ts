@@ -43,11 +43,11 @@ const SANDBOX_DELAY_EXPIRY = 30; // 30 seconds → "today" reminder
 const NOTIFICATIONS = {
   '48h': {
     title: 'Your free trial ends soon',
-    body: "You're doing great — stay on your mindful drinking journey! Your trial ends in 2 days.",
+    body: 'Keep full access to the app. Your trial ends in 2 days.',
   },
   expiry: {
     title: 'Last day of your free trial',
-    body: 'Today is your last day of full access. Subscribe to keep tracking mindfully.',
+    body: 'Today is your last day of full access. Subscribe to keep using the app.',
   },
 } as const;
 

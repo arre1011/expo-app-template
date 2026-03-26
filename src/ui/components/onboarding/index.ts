@@ -11,13 +11,8 @@ export { OnboardingLayout } from './OnboardingLayout';
 // Screen components
 export { IntroEmotionalScreen } from './IntroEmotionalScreen';
 export { IntroInfluencerScreen } from './IntroInfluencerScreen';
-export { IntroNotScreen } from './IntroNotScreen';
-export { IntroBenefitsScreen } from './IntroBenefitsScreen';
-export { HowMonitoringScreen } from './HowMonitoringScreen';
-export { ProfileLimitScreen, GOAL_PRESETS } from './ProfileLimitScreen';
-export { ProfileSexScreen } from './ProfileSexScreen';
-export { ProfileWeightScreen } from './ProfileWeightScreen';
-export { ProfileVolumeScreen } from './ProfileVolumeScreen';
+export { ScienceBasedScreen } from './ScienceBasedScreen';
+export { PersonalizationScreen } from './PersonalizationScreen';
 export { MotivationSelectScreen } from './MotivationSelectScreen';
-export { MotivationPartnerScreen } from './MotivationPartnerScreen';
+export { PrePaywallHookScreen } from './PrePaywallHookScreen';
 export { PaywallScreen } from './PaywallScreen';

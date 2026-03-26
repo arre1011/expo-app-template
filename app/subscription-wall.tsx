@@ -9,6 +9,7 @@ import React from 'react';
 import { StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
+import { appConfig } from '../src/config/appConfig';
 import { colors } from '../src/ui/theme';
 import { PaywallContent } from '../src/ui/components';
 
@@ -16,8 +17,8 @@ export default function SubscriptionWall() {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <PaywallContent
-        title={'Welcome Back'}
-        subtitle="Continue your mindful journey"
+        title={`Unlock ${appConfig.appName}`}
+        subtitle="Subscribe to continue using the full template"
         showBackButton={false}
         onPurchaseSuccess={() => router.replace('/(tabs)')}
       />

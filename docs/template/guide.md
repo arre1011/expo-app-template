@@ -10,7 +10,7 @@ This guide explains how to use this template to build a new app. It covers the b
 2. Run `npm install`
 3. Copy `.env.local.example` to `.env.local` and add your API keys
 4. Run `npx expo start`
-5. Customize: change app name in `app.json`, colors in `src/ui/theme/colors.ts`, and feature flags in `src/config/featureFlags.ts`
+5. Customize: change app name and legal placeholders in `src/config/appConfig.ts`, colors in `src/ui/theme/colors.ts`, and feature flags in `src/config/featureFlags.ts`
 
 ---
 
@@ -23,7 +23,7 @@ All features can be toggled via `src/config/featureFlags.ts`. This is the centra
 | Flag | Default | Description |
 |------|---------|-------------|
 | `calendarTab` | `true` | Calendar tab with daily notes + mood tracking |
-| `statisticsTab` | `true` | Statistics tab |
+| `statisticsTab` | `false` | Statistics tab (hidden in the template by default) |
 | `examplesTab` | `__DEV__` | Examples/Storybook tab (auto-hidden in production) |
 
 ### Subscription & Paywall

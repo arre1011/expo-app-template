@@ -41,10 +41,10 @@ export default function TabLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Session',
+          title: 'Home',
           headerShown: false,
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="wine-outline" size={size} color={color} />
+            <Ionicons name="home-outline" size={size} color={color} />
           ),
         }}
       />

@@ -1,427 +1,91 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React from 'react';
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  RefreshControl,
-  ActivityIndicator,
-  AppState,
-  AppStateStatus,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useFocusEffect } from 'expo-router';
+import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { format, isSameDay } from 'date-fns';
-import { enUS } from 'date-fns/locale';
-import { colors, spacing, fontSize, fontWeight } from '../../src/ui/theme';
-import { BACDisplay, GoalProgress, DrinkListItem, BACChart, BACChartVictory, QuickAddBar } from '../../src/ui/components';
-import { AddDrinkSheet, EditBacLimitSheet, PastSessionsSheet } from '../../src/ui/sheets';
-import { useAppStore } from '../../src/ui/hooks/useAppStore';
-import { useSessionStore, useIsSessionActive, usePastSessions } from '../../src/ui/hooks/useSessionStore';
-import { RecentDrinkTemplate } from '../../src/domain/models/types';
-import { featureFlags } from '../../src/config/featureFlags';
-import { borderRadius } from '../../src/ui/theme';
-import { DEFAULT_DAILY_GOAL } from '../../src/domain/constants/defaults';
-import { drinkDataEvents } from '../../src/ui/hooks/drinkDataEvents';
+import { Card } from '../../src/ui/components';
+import { appConfig } from '../../src/config/appConfig';
+import { colors, spacing, fontSize, fontWeight, borderRadius } from '../../src/ui/theme';
 
-export default function SessionScreen() {
-  const { profile, todayGoal, recentDrinkTemplates, loadRecentDrinks, loadCustomDrinks, quickAddDrink } = useAppStore();
+const START_POINTS = [
+  {
+    title: 'Replace this screen first',
+    description: 'Use Home for the first meaningful action in your next app, not for generic stats.',
+    icon: 'home-outline' as const,
+    color: colors.primary,
+  },
+  {
+    title: 'Calendar stays reusable',
+    description: 'The calendar/journal flow is still available if the next app benefits from day-based tracking.',
+    icon: 'calendar-outline' as const,
+    color: colors.info,
+  },
+  {
+    title: 'Statistics are intentionally out',
+    description: 'Build a new stats area only when the next product actually needs one.',
+    icon: 'analytics-outline' as const,
+    color: colors.warning,
+  },
+];
 
-  const {
-    currentSession,
-    bacTimeSeries,
-    isLoading,
-    loadCurrentSession,
-    refreshBACOnly,
-    setProfile,
-    initializeSessions,
-  } = useSessionStore();
-
-  const isActive = useIsSessionActive();
-  const pastSessions = usePastSessions();
-
-  const [refreshing, setRefreshing] = useState(false);
-
-  // Freeze template list during Quick Add animation to prevent cards jumping positions
-  const [frozenTemplates, setFrozenTemplates] = useState<typeof recentDrinkTemplates | null>(null);
-  const displayTemplates = frozenTemplates ?? recentDrinkTemplates;
-
-  // Ref to suppress screen reload during Quick Add animation (800ms)
-  const isQuickAddInProgress = useRef(false);
-  const quickAddTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-
-  // Sheet states
-  const [addDrinkSheetOpen, setAddDrinkSheetOpen] = useState(false);
-  const [editingDrinkId, setEditingDrinkId] = useState<number | null>(null);
-  const [bacLimitSheetOpen, setBacLimitSheetOpen] = useState(false);
-  const [pastSessionsSheetOpen, setPastSessionsSheetOpen] = useState(false);
-
-  // Initialize sessions and load recent drinks when profile is available
-  useEffect(() => {
-    if (profile) {
-      setProfile(profile);
-      initializeSessions(profile);
-      loadRecentDrinks();
-      loadCustomDrinks();
-    }
-  }, [profile]);
-
-  // Handle app state changes (background/foreground)
-  useEffect(() => {
-    const handleAppStateChange = (nextAppState: AppStateStatus) => {
-      if (nextAppState === 'active' && profile) {
-        // App came to foreground - reload current session
-        // This ensures we don't show old sessions from days ago
-        loadCurrentSession();
-      }
-    };
-
-    const subscription = AppState.addEventListener('change', handleAppStateChange);
-
-    return () => {
-      subscription.remove();
-    };
-  }, [profile, loadCurrentSession]);
-
-  // Subscribe to drink and session changes
-  // Skip reload if Quick Add animation is in progress (flag set in handleQuickAdd)
-  useEffect(() => {
-    const handleChange = () => {
-      if (isQuickAddInProgress.current) return;
-      loadCurrentSession();
-    };
-
-    drinkDataEvents.on('drinksChanged', handleChange);
-    drinkDataEvents.on('sessionsChanged', handleChange);
-
-    return () => {
-      drinkDataEvents.off('drinksChanged', handleChange);
-      drinkDataEvents.off('sessionsChanged', handleChange);
-      if (quickAddTimeoutRef.current) clearTimeout(quickAddTimeoutRef.current);
-    };
-  }, [loadCurrentSession]);
-
-  // Auto-refresh BAC every minute to update current BAC and chart
-  // Uses lightweight refreshBACOnly instead of full loadCurrentSession
-  // Aligns to the start of each minute for accurate clock display
-  useEffect(() => {
-    if (!profile || !isActive) return; // Only auto-refresh when there's an active session
-
-    let intervalId: NodeJS.Timeout | null = null;
-
-    // Calculate milliseconds until the next full minute
-    const now = new Date();
-    const msUntilNextMinute = (60 - now.getSeconds()) * 1000 - now.getMilliseconds();
-
-    // First, wait until the start of the next minute
-    const timeoutId = setTimeout(() => {
-      refreshBACOnly(); // Update at the start of the minute
-
-      // Then set up the interval for every subsequent minute
-      intervalId = setInterval(() => {
-        refreshBACOnly();
-      }, 60 * 1000);
-    }, msUntilNextMinute);
-
-    return () => {
-      clearTimeout(timeoutId);
-      if (intervalId) clearInterval(intervalId);
-    };
-  }, [profile, isActive, refreshBACOnly]);
-
-  // Reload data when screen comes into focus
-  // This also ensures "tap on tab = back to today" behavior:
-  // - User in history → taps Session tab → returns to "today" (Welcome/Active)
-  // - User on other tab → taps Session tab → shows "today"
-  useFocusEffect(
-    useCallback(() => {
-      if (profile) {
-        loadCurrentSession();
-      }
-    }, [loadCurrentSession, profile])
-  );
-
-  const onRefresh = async () => {
-    setRefreshing(true);
-    await loadCurrentSession();
-    setRefreshing(false);
-  };
-
-  const handleAddDrink = () => {
-    setEditingDrinkId(null);
-    setAddDrinkSheetOpen(true);
-  };
-
-  const handleQuickAdd = async (template: RecentDrinkTemplate) => {
-    // Freeze template list so cards don't jump positions during animation
-    setFrozenTemplates([...recentDrinkTemplates]);
-    // Block event-driven reload so the success animation (800ms) can finish
-    isQuickAddInProgress.current = true;
-    if (quickAddTimeoutRef.current) clearTimeout(quickAddTimeoutRef.current);
-
-    await quickAddDrink(template);
-    // LimitWarningPopup is now rendered globally in _layout.tsx
-
-    // After animation completes, unfreeze list + reload screen
-    quickAddTimeoutRef.current = setTimeout(() => {
-      setFrozenTemplates(null);
-      isQuickAddInProgress.current = false;
-      loadCurrentSession();
-    }, 1000);
-  };
-
-  const handleEditDrink = (id: number) => {
-    setEditingDrinkId(id);
-    setAddDrinkSheetOpen(true);
-  };
-
-  const handleEditBACLimit = () => {
-    setBacLimitSheetOpen(true);
-  };
-
-  // Handle AddDrinkSheet close
-  const handleAddDrinkSheetClose = () => {
-    setAddDrinkSheetOpen(false);
-    setEditingDrinkId(null);
-  };
-
-  // Format session date range for current session
-  const formatSessionDateRange = () => {
-    if (!currentSession) return '';
-
-    const startDate = new Date(currentSession.startTime);
-    const endDate = new Date(currentSession.endTime);
-
-    if (isSameDay(startDate, endDate)) {
-      // Same day: "Saturday, Jan 4"
-      return format(startDate, 'EEEE, MMM d', { locale: enUS });
-    } else {
-      // Multi-day: "Jan 3 – Jan 4"
-      return `${format(startDate, 'MMM d', { locale: enUS })} – ${format(endDate, 'MMM d', { locale: enUS })}`;
-    }
-  };
-
-  
-  // Use either the user's goal or the default goal
-  const displayMaxBAC = todayGoal?.maxBAC ?? DEFAULT_DAILY_GOAL.maxBAC;
-  const currentBAC = bacTimeSeries?.currentBAC ?? 0;
-
-  // Loading state
-  if (isLoading) {
-    return (
-      <SafeAreaView style={styles.container} edges={['top']}>
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={colors.primary} />
-        </View>
-      </SafeAreaView>
-    );
-  }
-
-  // Empty state - no active session
-  if (!currentSession) {
-    return (
-      <SafeAreaView style={styles.container} edges={['top']}>
-        <ScrollView
-          contentContainerStyle={styles.emptyScrollContent}
-          refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-          }
-        >
-          <View style={styles.emptyStateContainer}>
-            <TouchableOpacity
-              style={styles.emptyCircle}
-              onPress={handleAddDrink}
-              activeOpacity={0.7}
-            >
-              <View style={styles.emptyCircleInner} />
-            </TouchableOpacity>
-
-            <Text style={styles.emptyTitle} testID="empty-title">Ready for today?</Text>
-            <Text style={styles.emptySubtitle}>
-              Tracking helps you stay mindful.
-            </Text>
-
-            {/* Drink Again - recent drinks for quick re-logging */}
-            {featureFlags.quickAddBar && displayTemplates.length > 0 && (
-              <QuickAddBar
-                templates={displayTemplates}
-                onQuickAdd={handleQuickAdd}
-                style={styles.emptyQuickAdd}
-              />
-            )}
-
-            {/* Past Sessions - inside empty state container for proper positioning */}
-            {featureFlags.pastSessionsList && pastSessions.length > 0 && (
-              <View style={styles.emptyPastSessionsSection}>
-                <TouchableOpacity
-                  style={styles.pastSessionsButton}
-                  onPress={() => setPastSessionsSheetOpen(true)}
-                  activeOpacity={0.7}
-                >
-                  <View style={styles.pastSessionsButtonContent}>
-                    <Ionicons name="time-outline" size={20} color={colors.primary} />
-                    <Text style={styles.pastSessionsButtonText}>View Past Sessions</Text>
-                  </View>
-                  <Ionicons name="chevron-forward" size={20} color={colors.textLight} />
-                </TouchableOpacity>
-              </View>
-            )}
-          </View>
-        </ScrollView>
-
-        {/* Bottom Sheet Modals - also needed in empty state */}
-        <AddDrinkSheet
-          open={addDrinkSheetOpen}
-          onClose={handleAddDrinkSheetClose}
-          editingDrinkId={editingDrinkId}
-        />
-
-        <PastSessionsSheet
-          open={pastSessionsSheetOpen}
-          onClose={() => setPastSessionsSheetOpen(false)}
-        />
-
-        {/* Bottom Add Drink Bar */}
-        <View style={styles.bottomBarContainer}>
-          <TouchableOpacity
-            style={styles.addDrinkBottomBar}
-            onPress={handleAddDrink}
-            activeOpacity={0.8}
-            testID="btn-add-drink-bottom"
-          >
-            <Text style={styles.addDrinkBottomBarText}>ADD DRINK</Text>
-          </TouchableOpacity>
-        </View>
-      </SafeAreaView>
-    );
-  }
-
-  const sessionDateRange = formatSessionDateRange();
-  // Sort drinks newest first for display (most recent at top)
-  const drinks = [...(currentSession.drinks || [])].sort(
-    (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
-  );
-
+export default function HomeScreen() {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-        }
-      >
-        {/* Session Header - only show date for past sessions */}
-        {!isActive && (
-          <View style={styles.sessionHeader}>
-            <Text style={styles.sessionDateText}>{sessionDateRange.toUpperCase()}</Text>
+      <ScrollView contentContainerStyle={styles.content}>
+        <Text style={styles.eyebrow}>{appConfig.appName}</Text>
+        <Text style={styles.title}>Template Home Placeholder</Text>
+        <Text style={styles.subtitle}>
+          The old domain-specific home is removed. This is now the clean starting point for the next app.
+        </Text>
+
+        <Card style={styles.highlightCard}>
+          <View style={styles.highlightRow}>
+            <Ionicons name="build-outline" size={24} color={colors.primary} />
+            <Text style={styles.highlightTitle}>What belongs here next</Text>
           </View>
-        )}
+          <Text style={styles.highlightText}>
+            Replace this screen with your product&apos;s primary action, strongest empty state, or first repeatable user loop.
+          </Text>
+        </Card>
 
-        {/* BAC Display */}
-        <BACDisplay currentBAC={currentBAC} isActive={isActive} peakBAC={currentSession.peakBAC} />
-
-        {/* Goal Progress */}
-        {bacTimeSeries && (
-          <GoalProgress
-            currentBAC={bacTimeSeries.peakBAC}
-            maxBAC={displayMaxBAC}
-            onPress={handleEditBACLimit}
-          />
-        )}
-
-        {/* BAC Chart */}
-        {bacTimeSeries && bacTimeSeries.dataPoints.length > 0 && (
-          <View style={styles.chartSection}>
-            <BACChart timeSeries={bacTimeSeries} bacLimit={displayMaxBAC} />
-          </View>
-        )}
-
-        {featureFlags.bacChartVictory && bacTimeSeries && bacTimeSeries.dataPoints.length > 0 && (
-          <View style={styles.chartSection}>
-            <BACChartVictory timeSeries={bacTimeSeries} />
-          </View>
-        )}
-
-        {/* Drink Again Bar - zwischen Chart und Drinks */}
-        {featureFlags.quickAddBar && displayTemplates.length > 0 && (
-          <QuickAddBar
-            templates={displayTemplates}
-            onQuickAdd={handleQuickAdd}
-          />
-        )}
-
-        {/* Drinks List */}
-        <View style={styles.drinksSection} testID="drinks-section">
-          <Text style={styles.sectionTitle}>Drinks</Text>
-
-          {drinks.map(drink => (
-            <DrinkListItem
-              key={drink.id}
-              drink={drink}
-              onPress={() => handleEditDrink(drink.id)}
-              showArrow={true}
-            />
+        <View style={styles.cardList}>
+          {START_POINTS.map((item) => (
+            <Card key={item.title} style={styles.infoCard}>
+              <View style={[styles.iconWrap, { backgroundColor: `${item.color}15` }]}>
+                <Ionicons name={item.icon} size={22} color={item.color} />
+              </View>
+              <View style={styles.cardTextWrap}>
+                <Text style={styles.cardTitle}>{item.title}</Text>
+                <Text style={styles.cardDescription}>{item.description}</Text>
+              </View>
+            </Card>
           ))}
         </View>
 
-        {featureFlags.pastSessionsList && pastSessions.length > 0 && (
-          <View style={styles.pastSessionsSection}>
-            <TouchableOpacity
-              style={styles.pastSessionsButton}
-              onPress={() => setPastSessionsSheetOpen(true)}
-              activeOpacity={0.7}
-            >
-              <View style={styles.pastSessionsButtonContent}>
-                <Ionicons name="time-outline" size={20} color={colors.primary} />
-                <Text style={styles.pastSessionsButtonText}>View Past Sessions</Text>
-              </View>
-              <Ionicons name="chevron-forward" size={20} color={colors.textLight} />
-            </TouchableOpacity>
-          </View>
-        )}
+        <View style={styles.actions}>
+          <TouchableOpacity
+            style={styles.primaryAction}
+            onPress={() => router.push('/(tabs)/calendar')}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.primaryActionText}>Open Calendar Module</Text>
+          </TouchableOpacity>
 
-        {/* Inline Add Drink Button */}
-        <TouchableOpacity
-          style={styles.addDrinkInline}
-          onPress={handleAddDrink}
-          activeOpacity={0.8}
-        >
-          <Ionicons name="add-circle-outline" size={22} color={colors.textOnPrimary} />
-          <Text style={styles.addDrinkInlineText}>ADD DRINK</Text>
-        </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.secondaryAction}
+            onPress={() => router.push('/(tabs)/settings')}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.secondaryActionText}>Open Template Settings</Text>
+          </TouchableOpacity>
+        </View>
       </ScrollView>
-
-      {/* Bottom Add Drink Bar */}
-      <View style={styles.bottomBarContainer}>
-        <TouchableOpacity
-          style={styles.addDrinkBottomBar}
-          onPress={handleAddDrink}
-          activeOpacity={0.8}
-          testID="btn-add-drink-bottom"
-        >
-          <Text style={styles.addDrinkBottomBarText}>ADD DRINK</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Bottom Sheet Modals */}
-      <AddDrinkSheet
-        open={addDrinkSheetOpen}
-        onClose={handleAddDrinkSheetClose}
-        editingDrinkId={editingDrinkId}
-      />
-
-      <EditBacLimitSheet
-        open={bacLimitSheetOpen}
-        onClose={() => setBacLimitSheetOpen(false)}
-      />
-
-      <PastSessionsSheet
-        open={pastSessionsSheetOpen}
-        onClose={() => setPastSessionsSheetOpen(false)}
-      />
     </SafeAreaView>
   );
 }
@@ -431,158 +95,107 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background,
   },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  scrollContent: {
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.sm,
-    paddingBottom: 100,
-  },
-  emptyScrollContent: {
-    flexGrow: 1,
+  content: {
     padding: spacing.lg,
+    paddingBottom: spacing.xxl,
   },
-  header: {
-    marginBottom: spacing.md,
-  },
-  sessionHeader: {
-    alignItems: 'center',
-    marginBottom: spacing.md,
-  },
-  sessionDateText: {
+  eyebrow: {
     fontSize: fontSize.sm,
-    color: colors.textSecondary,
-    fontWeight: fontWeight.medium,
-    letterSpacing: 0.5,
-  },
-  chartSection: {
-    marginTop: spacing.md,
-  },
-  drinksSection: {
-    marginTop: spacing.md,
-  },
-  sectionTitle: {
-    fontSize: fontSize.sm,
-    fontWeight: fontWeight.medium,
-    color: colors.textSecondary,
-    marginBottom: spacing.xs,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  bottomBarContainer: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.lg,
-    paddingTop: spacing.sm,
-    backgroundColor: colors.background,
-  },
-  addDrinkBottomBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'red',
-    borderRadius: borderRadius.md,
-    paddingVertical: spacing.md,
-    gap: spacing.sm,
-  },
-  addDrinkBottomBarText: {
-    fontSize: fontSize.md,
     fontWeight: fontWeight.semibold,
-    color: colors.textOnPrimary,
-    letterSpacing: 0.5,
+    color: colors.primary,
+    textTransform: 'uppercase',
+    letterSpacing: 0.6,
+    marginBottom: spacing.sm,
   },
-  emptyStateContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: spacing.lg,
-  },
-  emptyCircle: {
-    width: 160,
-    height: 160,
-    borderRadius: 80,
-    backgroundColor: `${colors.yellow}25`,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: spacing.xl,
-  },
-  emptyCircleInner: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    backgroundColor: `${colors.yellow}40`,
-  },
-  emptyTitle: {
-    fontSize: fontSize.xxl,
+  title: {
+    fontSize: 32,
     fontWeight: fontWeight.bold,
     color: colors.text,
     marginBottom: spacing.sm,
   },
-  emptySubtitle: {
+  subtitle: {
     fontSize: fontSize.md,
     color: colors.textSecondary,
-    textAlign: 'center',
-    lineHeight: 22,
-    marginBottom: spacing.xl,
+    lineHeight: 24,
+    marginBottom: spacing.lg,
   },
-  emptyQuickAddContainer: {
-    width: '100%',
-    marginTop: spacing.md,
+  highlightCard: {
+    padding: spacing.lg,
+    backgroundColor: `${colors.primary}10`,
+    marginBottom: spacing.lg,
   },
-  emptyQuickAdd: {
-    alignSelf: 'stretch',
-    marginTop: spacing.lg,
-  },
-  emptyPastSessionsSection: {
-    width: '100%',
-    marginTop: spacing.lg,
-  },
-  pastSessionsSection: {
-    marginTop: spacing.xl,
-  },
-  pastSessionsButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: colors.card,
-    borderRadius: borderRadius.md,
-    padding: spacing.md,
-    shadowColor: colors.shadow,
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.04,
-    shadowRadius: 3,
-    elevation: 1,
-  },
-  pastSessionsButtonContent: {
+  highlightRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
+    marginBottom: spacing.sm,
   },
-  pastSessionsButtonText: {
-    fontSize: fontSize.md,
-    fontWeight: fontWeight.medium,
+  highlightTitle: {
+    fontSize: fontSize.lg,
+    fontWeight: fontWeight.bold,
     color: colors.text,
   },
-  addDrinkInline: {
+  highlightText: {
+    fontSize: fontSize.md,
+    color: colors.textSecondary,
+    lineHeight: 22,
+  },
+  cardList: {
+    gap: spacing.md,
+    marginBottom: spacing.xl,
+  },
+  infoCard: {
     flexDirection: 'row',
+    gap: spacing.md,
+    alignItems: 'flex-start',
+    padding: spacing.md,
+  },
+  iconWrap: {
+    width: 44,
+    height: 44,
+    borderRadius: borderRadius.full,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'pink',
-    borderRadius: borderRadius.md,
-    paddingVertical: spacing.sm,
-    gap: spacing.xs,
-    marginTop: spacing.xl,
   },
-  addDrinkInlineText: {
+  cardTextWrap: {
+    flex: 1,
+  },
+  cardTitle: {
+    fontSize: fontSize.lg,
+    fontWeight: fontWeight.semibold,
+    color: colors.text,
+    marginBottom: 4,
+  },
+  cardDescription: {
+    fontSize: fontSize.md,
+    color: colors.textSecondary,
+    lineHeight: 22,
+  },
+  actions: {
+    gap: spacing.md,
+  },
+  primaryAction: {
+    backgroundColor: colors.primary,
+    borderRadius: borderRadius.full,
+    paddingVertical: spacing.md,
+    alignItems: 'center',
+  },
+  primaryActionText: {
+    fontSize: fontSize.md,
+    fontWeight: fontWeight.bold,
+    color: colors.textOnPrimary,
+  },
+  secondaryAction: {
+    backgroundColor: colors.card,
+    borderRadius: borderRadius.full,
+    paddingVertical: spacing.md,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  secondaryActionText: {
     fontSize: fontSize.md,
     fontWeight: fontWeight.semibold,
-    color: colors.textOnPrimary,
-    letterSpacing: 0.5,
+    color: colors.text,
   },
 });

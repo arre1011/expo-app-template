@@ -26,6 +26,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { colors, spacing, fontSize, fontWeight, borderRadius } from '../theme';
 import { ModalHeader } from '../components';
+import { appConfig } from '../../config/appConfig';
 import { useSubscriptionStatus, useSubscriptionStore } from '../hooks/useSubscriptionStore';
 import { restorePurchases } from '../../services/revenueCatService';
 
@@ -138,7 +139,7 @@ export function MySubscriptionSheet({ open, onClose }: MySubscriptionSheetProps)
   };
 
   const handleContactSupport = () => {
-    Linking.openURL('mailto:support@drinkmonitoring.app?subject=Subscription Support');
+    Linking.openURL(`mailto:${appConfig.supportEmail}?subject=${encodeURIComponent('Subscription Support')}`);
   };
 
   return (

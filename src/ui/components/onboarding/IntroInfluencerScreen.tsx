@@ -13,7 +13,7 @@ export function IntroInfluencerScreen({ onNext, onBack, progress }: OnboardingSc
   return (
     <OnboardingLayout progress={progress} onBack={onBack} footer={
       <Button
-        title="Let's go"
+        title="Continue"
         onPress={onNext}
         size="large"
         style={styles.button}
@@ -32,9 +32,9 @@ export function IntroInfluencerScreen({ onNext, onBack, progress }: OnboardingSc
           </View>
         )}
 
-        <Text style={styles.title}>Less hangover{'\n'}More weekend</Text>
+        <Text style={styles.title}>Creator / Offer Placeholder</Text>
         <Text style={styles.description}>
-          Still drinking — just smarter about it{'\n'}Many people want the weekend — not the aftermath
+          Use this variant when a campaign, creator, or special offer should slightly reframe the opening without rebuilding the full onboarding.
         </Text>
       </View>
     </OnboardingLayout>

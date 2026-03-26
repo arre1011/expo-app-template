@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
@@ -7,10 +7,7 @@ import { useAppStore } from '../src/ui/hooks/useAppStore';
 import { useOfferStore } from '../src/ui/hooks/useOfferStore';
 import { getRValueForSex, BAC_CONSTANTS } from '../src/domain/constants/defaults';
 import { validateUserProfile } from '../src/domain/services/validation';
-import { WeightUnit } from '../src/domain/utils/weightConversion';
-import { VolumeUnit } from '../src/domain/utils/volumeConversion';
-import { BACUnit, percentToPermille } from '../src/domain/utils/bacConversion';
-import { Sex, UserMotivation } from '../src/domain/models/types';
+import { UserMotivation } from '../src/domain/models/types';
 import { saveUserMotivations } from '../src/data/repositories/userMotivationsRepository';
 import { featureFlags } from '../src/config/featureFlags';
 import { posthog, AnalyticsEvents } from '../src/services/analyticsService';
@@ -20,22 +17,14 @@ import {
   STANDARD_FLOW,
   INFLUENCER_FLOW,
   GIFT_FLOW,
-  GOAL_PRESETS,
   IntroEmotionalScreen,
   IntroInfluencerScreen,
-  IntroNotScreen,
-  IntroBenefitsScreen,
-  HowMonitoringScreen,
-  ProfileLimitScreen,
-  ProfileSexScreen,
-  ProfileWeightScreen,
-  ProfileVolumeScreen,
+  ScienceBasedScreen,
+  PersonalizationScreen,
   MotivationSelectScreen,
-  MotivationPartnerScreen,
+  PrePaywallHookScreen,
   PaywallScreen,
 } from '../src/ui/components/onboarding';
-
-type EliminationRate = 'slow' | 'standard' | 'fast';
 
 function getFlowForOffer(offerType: string): OnboardingStep[] {
   switch (offerType) {
@@ -47,32 +36,45 @@ function getFlowForOffer(offerType: string): OnboardingStep[] {
 
 export default function OnboardingScreen() {
   const saveProfile = useAppStore(state => state.saveProfile);
-  const setTodayGoal = useAppStore(state => state.setTodayGoal);
+  const profile = useAppStore(state => state.profile);
   const offerType = useOfferStore(state => state.offerType);
 
   const STEPS = getFlowForOffer(offerType);
 
   // Track onboarding start
-  useState(() => { posthog.capture(AnalyticsEvents.ONBOARDING_STARTED); });
+  useEffect(() => {
+    posthog.capture(AnalyticsEvents.ONBOARDING_STARTED);
+  }, []);
 
   // Step management
   const [currentStep, setCurrentStep] = useState<OnboardingStep>(STEPS[0]);
   const currentStepIndex = STEPS.indexOf(currentStep);
 
-  // Shared profile state
-  const [weightKg, setWeightKg] = useState(75);
-  const [weightUnit, setWeightUnit] = useState<WeightUnit>('lb');
-  const [volumeUnit, setVolumeUnit] = useState<VolumeUnit>('oz');
-  const [bacUnit] = useState<BACUnit>('percent');
-  const [sex, setSex] = useState<Sex>(null);
-  const [eliminationRate] = useState<EliminationRate>('standard');
-  const [isLoading, setIsLoading] = useState(false);
-
-  // Goal state
-  const [selectedGoalPreset, setSelectedGoalPreset] = useState<string>('social');
+  const [selectedPersonalization, setSelectedPersonalization] = useState<'guided' | 'focused' | 'lightweight'>('guided');
 
   // Motivation state
   const [selectedMotivations, setSelectedMotivations] = useState<UserMotivation[]>([]);
+
+  const ensureTemplateProfile = async () => {
+    if (profile) return;
+
+    const templateProfile = {
+      weightKg: 75,
+      sex: 'other' as const,
+      bodyWaterConstantR: getRValueForSex('other'),
+      eliminationRatePermillePerHour: BAC_CONSTANTS.ELIMINATION_RATE_STANDARD,
+      weightUnit: 'lb' as const,
+      volumeUnit: 'oz' as const,
+      bacUnit: 'percent' as const,
+    };
+
+    const validation = validateUserProfile(templateProfile);
+    if (!validation.isValid) {
+      throw new Error(validation.errors.join('\n'));
+    }
+
+    await saveProfile(templateProfile);
+  };
 
   // ─── Navigation ──────────────────────────────────────
   const goToNextStep = async () => {
@@ -86,10 +88,21 @@ export default function OnboardingScreen() {
     if (nextIndex < STEPS.length) {
       const nextStep = STEPS[nextIndex];
       if (nextStep === 'paywall' && !featureFlags.onboardingPaywall) {
+        await ensureTemplateProfile();
         posthog.capture(AnalyticsEvents.ONBOARDING_COMPLETED);
         router.replace('/(tabs)');
         return;
       }
+
+      if (nextStep === 'paywall') {
+        try {
+          await ensureTemplateProfile();
+        } catch (error) {
+          Alert.alert('Error', error instanceof Error ? error.message : 'Could not prepare onboarding.');
+          return;
+        }
+      }
+
       setCurrentStep(nextStep);
     }
   };
@@ -102,27 +115,6 @@ export default function OnboardingScreen() {
   };
 
   // ─── Handlers ────────────────────────────────────────
-  const getEliminationRateValue = (rate: EliminationRate): number => {
-    switch (rate) {
-      case 'slow': return BAC_CONSTANTS.ELIMINATION_RATE_SLOW;
-      case 'standard': return BAC_CONSTANTS.ELIMINATION_RATE_STANDARD;
-      case 'fast': return BAC_CONSTANTS.ELIMINATION_RATE_FAST;
-    }
-  };
-
-  const handleGoalSubmit = async () => {
-    const preset = GOAL_PRESETS.find(p => p.id === selectedGoalPreset);
-    if (preset) {
-      const goalValuePermille = percentToPermille(preset.value);
-      try {
-        await setTodayGoal(goalValuePermille, true);
-      } catch (error) {
-        console.error('Failed to save goal:', error);
-      }
-    }
-    goToNextStep();
-  };
-
   const handleMotivationsSubmit = async () => {
     if (selectedMotivations.length > 0) {
       try {
@@ -140,39 +132,6 @@ export default function OnboardingScreen() {
     );
   };
 
-  const handleProfileSubmit = async () => {
-    if (sex === null) {
-      Alert.alert('Error', 'Please select a biological profile first');
-      return;
-    }
-
-    const profileData = {
-      weightKg,
-      sex,
-      bodyWaterConstantR: getRValueForSex(sex),
-      eliminationRatePermillePerHour: getEliminationRateValue(eliminationRate),
-      weightUnit,
-      volumeUnit,
-      bacUnit,
-    };
-
-    const validation = validateUserProfile(profileData);
-    if (!validation.isValid) {
-      Alert.alert('Error', validation.errors.join('\n'));
-      return;
-    }
-
-    setIsLoading(true);
-    try {
-      await saveProfile(profileData);
-      goToNextStep();
-    } catch {
-      Alert.alert('Error', 'Could not save profile.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   // ─── Shared progress prop ────────────────────────────
   const progress = { current: currentStepIndex, total: STEPS.length };
   const canGoBack = currentStepIndex > 0;
@@ -184,55 +143,17 @@ export default function OnboardingScreen() {
         return <IntroEmotionalScreen onNext={goToNextStep} progress={progress} />;
       case 'intro_influencer':
         return <IntroInfluencerScreen onNext={goToNextStep} progress={progress} />;
-      case 'intro_not':
-        return <IntroNotScreen onNext={goToNextStep} onBack={goToPreviousStep} progress={progress} />;
-      case 'intro_benefits':
-        return <IntroBenefitsScreen onNext={goToNextStep} onBack={goToPreviousStep} progress={progress} />;
-      case 'how_monitoring':
-        return <HowMonitoringScreen onNext={goToNextStep} onBack={goToPreviousStep} progress={progress} />;
-      case 'profile_limit':
+      case 'science_based':
+        return <ScienceBasedScreen onNext={goToNextStep} onBack={goToPreviousStep} progress={progress} />;
+      case 'personalization':
         return (
-          <ProfileLimitScreen
+          <PersonalizationScreen
             onNext={goToNextStep}
             onBack={canGoBack ? goToPreviousStep : undefined}
             progress={progress}
-            selectedGoalPreset={selectedGoalPreset}
-            onGoalPresetSelect={setSelectedGoalPreset}
-            onGoalSubmit={handleGoalSubmit}
-          />
-        );
-      case 'profile_sex':
-        return (
-          <ProfileSexScreen
-            onNext={goToNextStep}
-            onBack={canGoBack ? goToPreviousStep : undefined}
-            progress={progress}
-            sex={sex}
-            onSexChange={setSex}
-          />
-        );
-      case 'profile_weight':
-        return (
-          <ProfileWeightScreen
-            onNext={goToNextStep}
-            onBack={goToPreviousStep}
-            progress={progress}
-            weightKg={weightKg}
-            weightUnit={weightUnit}
-            onWeightValueChange={setWeightKg}
-            onWeightUnitChange={setWeightUnit}
-          />
-        );
-      case 'profile_volume':
-        return (
-          <ProfileVolumeScreen
-            onNext={goToNextStep}
-            onBack={goToPreviousStep}
-            progress={progress}
-            volumeUnit={volumeUnit}
-            onVolumeUnitChange={setVolumeUnit}
-            onSubmitProfile={handleProfileSubmit}
-            isLoading={isLoading}
+            selectedOption={selectedPersonalization}
+            onOptionSelect={setSelectedPersonalization}
+            onSubmit={goToNextStep}
           />
         );
       case 'motivation_select':
@@ -246,8 +167,8 @@ export default function OnboardingScreen() {
             onMotivationsSubmit={handleMotivationsSubmit}
           />
         );
-      case 'motivation_partner':
-        return <MotivationPartnerScreen onNext={goToNextStep} onBack={goToPreviousStep} progress={progress} />;
+      case 'pre_paywall_hook':
+        return <PrePaywallHookScreen onNext={goToNextStep} onBack={goToPreviousStep} progress={progress} />;
       case 'paywall':
         return <PaywallScreen onNext={() => {}} onBack={canGoBack ? goToPreviousStep : undefined} progress={progress} />;
       default:
