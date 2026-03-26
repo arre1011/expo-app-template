@@ -12,6 +12,8 @@ import Purchases, {
 } from 'react-native-purchases';
 import { Platform } from 'react-native';
 import Constants from 'expo-constants';
+import { appConfig } from '../config/appConfig';
+import { env } from '../config/env';
 
 // ============================================================================
 // ⚠️  WICHTIG: VOR JEDEM BUILD ÜBERPRÜFEN!
@@ -46,8 +48,8 @@ const getApiKey = (): string => {
   // 3. Get platform-specific API key from EXPO_PUBLIC_ environment variables
   // iOS keys start with 'appl_', Android keys start with 'goog_'
   // These are inlined into the bundle at build time by Expo
-  const iosKey = process.env.EXPO_PUBLIC_REVENUECAT_IOS_API_KEY;
-  const androidKey = process.env.EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY;
+  const iosKey = env.revenueCatIosApiKey;
+  const androidKey = env.revenueCatAndroidApiKey;
 
   // Select key based on platform
   const envApiKey = Platform.OS === 'ios' ? iosKey : androidKey;
@@ -68,13 +70,13 @@ const getApiKey = (): string => {
 };
 
 const API_KEY = getApiKey();
-export const ENTITLEMENT_ID = 'pro';
+export const ENTITLEMENT_ID = appConfig.integrations.revenueCat.entitlementId;
 
 // Product IDs
 export const PRODUCT_IDS = {
-  MONTHLY: 'monthly',
-  YEARLY: 'yearly',
-  LIFETIME: 'lifetime_pro',
+  MONTHLY: appConfig.integrations.revenueCat.productIds.monthly,
+  YEARLY: appConfig.integrations.revenueCat.productIds.yearly,
+  LIFETIME: appConfig.integrations.revenueCat.productIds.lifetime,
 } as const;
 
 /**

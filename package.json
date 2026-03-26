@@ -1,5 +1,5 @@
 {
-  "name": "drink-tracking",
+  "name": "expo-app-template",
   "version": "1.0.0",
   "main": "expo-router/entry",
   "scripts": {
@@ -8,6 +8,7 @@
     "ios": "expo run:ios",
     "web": "expo start --web",
     "test": "jest",
+    "template:audit": "node scripts/template-audit.mjs",
     "postinstall": "patch-package"
   },
   "dependencies": {

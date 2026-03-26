@@ -9,11 +9,12 @@
  */
 
 import type { OfferType } from '../ui/hooks/useOfferStore';
+import { env } from '../config/env';
 
 // Minimum confidence score for accepting a deferred deep link match (MEDIUM threshold)
 const CONFIDENCE_THRESHOLD = 50;
 
-const DLN_API_KEY = process.env.EXPO_PUBLIC_DEEPLINKNOW_API_KEY ?? '';
+const DLN_API_KEY = env.deepLinkNowApiKey;
 
 // Lazy-load the native module to prevent crash on import if not available
 let DeepLinkNow: any = null;

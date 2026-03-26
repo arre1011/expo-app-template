@@ -28,17 +28,5 @@
       },
       "autoIncrement": true
     }
-  },
-  "submit": {
-    "production": {
-      "ios": {
-        "appleId": "r.m.arnegger@googlemail.com",
-        "appleTeamId": "UDYTFKTJ2K"
-      },
-      "android": {
-        "track": "internal",
-        "serviceAccountKeyPath": "./google-service-account.json"
-      }
-    }
   }
 }

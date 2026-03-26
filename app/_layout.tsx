@@ -14,6 +14,7 @@ import { useProfileStore } from '../src/ui/hooks/useProfileStore';
 import { useSubscriptionStore } from '../src/ui/hooks/useSubscriptionStore';
 import { useOfferStore } from '../src/ui/hooks/useOfferStore';
 import { colors } from '../src/ui/theme';
+import { env } from '../src/config/env';
 import { setupNotificationChannel, getPendingReminderType } from '../src/services/notificationService';
 import { initializeDeepLinkNow, findDeferredOffer, parseOfferFromUrl } from '../src/services/deepLinkService';
 import { setSubscriberAttributes } from '../src/services/revenueCatService';
@@ -41,13 +42,13 @@ const navigationIntegration = Sentry.reactNavigationIntegration({
 });
 
 Sentry.init({
-  dsn: 'https://31b8b15cce537017a62b43c61858ad45@o4510958471282688.ingest.de.sentry.io/4510959847080016',
+  dsn: env.sentryDsn || undefined,
   integrations: [navigationIntegration],
   tracesSampleRate: 1.0,
   _experiments: {
     profilesSampleRate: 1.0,
   },
-  enabled: !__DEV__,
+  enabled: !__DEV__ && env.sentryDsn.length > 0,
 });
 
 function RootLayout() {
