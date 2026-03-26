@@ -98,7 +98,7 @@ export async function findDeferredOffer(): Promise<ResolvedOffer | null> {
  * Parse offer parameters from a direct deep link URL.
  * Used when app is already installed and opened via URL scheme.
  *
- * Expected URL format: drink-tracking://paywall?offer=influencer_trial&influencer_name=john
+ * Expected URL format: template-app://paywall?offer=influencer_trial&influencer_name=john
  */
 export function parseOfferFromUrl(url: string): ResolvedOffer | null {
   try {

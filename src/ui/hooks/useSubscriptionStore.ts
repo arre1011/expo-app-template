@@ -6,6 +6,7 @@
 import { create } from 'zustand';
 import Purchases, { CustomerInfo } from 'react-native-purchases';
 import {
+  ENTITLEMENT_ID,
   initializeRevenueCat,
   getCustomerInfo,
   hasProAccess,
@@ -13,9 +14,6 @@ import {
   getSubscriptionStatus,
   addCustomerInfoUpdateListener,
 } from '../../services/revenueCatService';
-
-// Note: The RevenueCat dashboard has a double space ("monitoring  Pro") — this must match exactly.
-const ENTITLEMENT_ID = 'Drink monitoring  Pro';
 
 /** Extract Pro status and subscription details from CustomerInfo */
 function extractSubscriptionState(info: CustomerInfo) {

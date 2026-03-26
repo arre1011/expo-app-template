@@ -1,14 +1,14 @@
 import { Tabs, Redirect } from 'expo-router';
 import { View, ActivityIndicator, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useAppStore } from '../../src/ui/hooks/useAppStore';
+import { useProfileStore } from '../../src/ui/hooks/useProfileStore';
 import { useSubscriptionStore } from '../../src/ui/hooks/useSubscriptionStore';
 import { colors } from '../../src/ui/theme';
 import { featureFlags } from '../../src/config/featureFlags';
 
 export default function TabLayout() {
-  const hasProfile = useAppStore(state => state.hasProfile);
-  const isLoading = useAppStore(state => state.isProfileLoading);
+  const hasProfile = useProfileStore(state => state.hasProfile);
+  const isLoading = useProfileStore(state => state.isProfileLoading);
   const isProUser = useSubscriptionStore(state => state.isProUser);
   const isSubscriptionLoading = useSubscriptionStore(state => state.isLoading);
 

@@ -16,38 +16,15 @@ export const posthog = new PostHog(
 
 // Pre-defined event names for type safety
 export const AnalyticsEvents = {
-  // Onboarding
   ONBOARDING_STARTED: 'onboarding_started',
-  ONBOARDING_STEP_COMPLETED: 'onboarding_step_completed',
   ONBOARDING_COMPLETED: 'onboarding_completed',
-
-  // Drinks
-  DRINK_ADDED: 'drink_added',
-  DRINK_EDITED: 'drink_edited',
-  DRINK_DELETED: 'drink_deleted',
-
-  // Session
-  SESSION_STARTED: 'session_started',
-  SESSION_ENDED: 'session_ended',
-
-  // Limits
-  LIMIT_SET: 'limit_set',
-  LIMIT_REACHED: 'limit_reached',
-  LIMIT_POPUP_SHOWN: 'limit_popup_shown',
-  LIMIT_POPUP_DISMISSED: 'limit_popup_dismissed',
-
-  // Subscription
   PAYWALL_VIEWED: 'paywall_viewed',
   PAYWALL_VARIANT_VIEWED: 'paywall_variant_viewed',
   PURCHASE_STARTED: 'purchase_started',
   PURCHASE_COMPLETED: 'purchase_completed',
   PURCHASE_CANCELLED: 'purchase_cancelled',
-
-  // Deep Link Offers
   DEEP_LINK_MATCHED: 'deep_link_matched',
   DEEP_LINK_OFFER_APPLIED: 'deep_link_offer_applied',
-
-  // Notifications
   NOTIFICATION_RECEIVED: 'notification_received',
   WRAP_UP_VIEWED: 'wrap_up_viewed',
 } as const;

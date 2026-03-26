@@ -1,11 +1,14 @@
 {
   "permissions": {
+    "allow": [
+      "Bash(npx tsc:*)"
+    ],
     "deny": [
       "Read(./NOTE.md)",
       "Edit(./NOTE.md)"
     ],
-    "allow": [
-      "Bash(npx tsc:*)"
+    "additionalDirectories": [
+      "/Users/rene/IdeaProjects/expo-app-template/src/domain/constants"
     ]
   }
 }

@@ -10,11 +10,9 @@ import { View, ActivityIndicator, StyleSheet, AppState, AppStateStatus, Linking 
 import * as Notifications from 'expo-notifications';
 import { configureReanimatedLogger, ReanimatedLogLevel } from 'react-native-reanimated';
 import * as Sentry from '@sentry/react-native';
-import { useAppStore } from '../src/ui/hooks/useAppStore';
+import { useProfileStore } from '../src/ui/hooks/useProfileStore';
 import { useSubscriptionStore } from '../src/ui/hooks/useSubscriptionStore';
-import { useAwardsStore } from '../src/ui/hooks/useAwardsStore';
 import { useOfferStore } from '../src/ui/hooks/useOfferStore';
-import { LimitWarningPopup } from '../src/ui/components';
 import { colors } from '../src/ui/theme';
 import { setupNotificationChannel, getPendingReminderType } from '../src/services/notificationService';
 import { initializeDeepLinkNow, findDeferredOffer, parseOfferFromUrl } from '../src/services/deepLinkService';
@@ -52,9 +50,6 @@ Sentry.init({
   enabled: !__DEV__,
 });
 
-// TODO: REMOVE THIS FLAG AFTER FIRST RUN - it resets the database for session migration
-const RESET_DATABASE_FOR_SESSION_MIGRATION = true;
-
 function RootLayout() {
   const navigationRef = useNavigationContainerRef();
   useEffect(() => {
@@ -64,38 +59,8 @@ function RootLayout() {
   }, [navigationRef]);
 
   const [isReady, setIsReady] = useState(false);
-  const loadProfile = useAppStore(state => state.loadProfile);
-  const loadTodayData = useAppStore(state => state.loadTodayData);
+  const loadProfile = useProfileStore(state => state.loadProfile);
   const initializeSubscription = useSubscriptionStore(state => state.initialize);
-  const initializeAwards = useAwardsStore(state => state.initialize);
-
-  // Limit Warning Popup state (global popup)
-  const limitWarning = useAppStore(state => state.limitWarning);
-  const confirmPendingDrink = useAppStore(state => state.confirmPendingDrink);
-  const cancelPendingDrink = useAppStore(state => state.cancelPendingDrink);
-
-  // Calculate if popup should be visible
-  const showWarningPopup = limitWarning !== null &&
-    limitWarning.type !== 'none' &&
-    limitWarning.type !== 'approaching_limit';
-
-  // Handle "Log anyway" from warning popup (only for will_exceed_limit)
-  const handleWarningProceed = async () => {
-    posthog.capture(AnalyticsEvents.LIMIT_POPUP_DISMISSED, { action: 'proceed', type: limitWarning?.type ?? 'unknown' });
-    await confirmPendingDrink();
-  };
-
-  // Handle dismiss from warning popup
-  const handleWarningDismiss = () => {
-    posthog.capture(AnalyticsEvents.LIMIT_POPUP_DISMISSED, { action: 'dismiss', type: limitWarning?.type ?? 'unknown' });
-    if (limitWarning?.type === 'predictive_warning') {
-      // Drink is already saved, just clear the warning state
-      useAppStore.setState({ limitWarning: null });
-    } else {
-      // will_exceed_limit: Cancel the pending drink (don't save)
-      cancelPendingDrink();
-    }
-  };
 
   // useLastNotificationResponse covers both cases:
   // - Cold start: returns the response that launched the app
@@ -230,12 +195,6 @@ function RootLayout() {
 
         // Load core app data
         await loadProfile();
-        await loadTodayData();
-
-        // Initialize awards (async, doesn't block app)
-        initializeAwards().catch(error => {
-          console.error('Awards initialization failed (non-blocking):', error);
-        });
 
         // Initialize DeepLinkNow and resolve deferred offers (non-blocking)
         if (featureFlags.deepLinkOffers) {
@@ -308,14 +267,6 @@ function RootLayout() {
           <BottomSheetModalProvider>
             <StatusBar style="auto" />
             <Slot />
-
-            {/* Global Limit Warning Popup - rendered at root level for reliable display */}
-            <LimitWarningPopup
-              warning={limitWarning}
-              visible={showWarningPopup}
-              onDismiss={handleWarningDismiss}
-              onProceed={handleWarningProceed}
-            />
           </BottomSheetModalProvider>
         </SafeAreaProvider>
       </GestureHandlerRootView>

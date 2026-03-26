@@ -3,7 +3,7 @@ import { Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { colors } from '../src/ui/theme';
-import { useAppStore } from '../src/ui/hooks/useAppStore';
+import { useProfileStore } from '../src/ui/hooks/useProfileStore';
 import { useOfferStore } from '../src/ui/hooks/useOfferStore';
 import { getRValueForSex, BAC_CONSTANTS } from '../src/domain/constants/defaults';
 import { validateUserProfile } from '../src/domain/services/validation';
@@ -35,8 +35,8 @@ function getFlowForOffer(offerType: string): OnboardingStep[] {
 }
 
 export default function OnboardingScreen() {
-  const saveProfile = useAppStore(state => state.saveProfile);
-  const profile = useAppStore(state => state.profile);
+  const saveProfile = useProfileStore(state => state.saveProfile);
+  const profile = useProfileStore(state => state.profile);
   const offerType = useOfferStore(state => state.offerType);
 
   const STEPS = getFlowForOffer(offerType);

@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { DayStatus, JournalEntry, MoodType } from '../../domain/models/types';
+import { DayStatus, MoodType } from '../../domain/models/types';
 import { getJournalEntriesForRange } from '../../data/repositories/journalEntryRepository';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval } from 'date-fns';
 

@@ -68,8 +68,7 @@ const getApiKey = (): string => {
 };
 
 const API_KEY = getApiKey();
-// Note: The RevenueCat dashboard has a double space ("monitoring  Pro") — this must match exactly.
-const ENTITLEMENT_ID = 'Drink monitoring  Pro';
+export const ENTITLEMENT_ID = 'pro';
 
 // Product IDs
 export const PRODUCT_IDS = {
