@@ -1,14 +1,17 @@
 {
   "permissions": {
     "allow": [
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "Bash(./gradlew clean:*)"
     ],
     "deny": [
       "Read(./NOTE.md)",
       "Edit(./NOTE.md)"
     ],
     "additionalDirectories": [
-      "/Users/rene/IdeaProjects/expo-app-template/src/domain/constants"
+      "/Users/rene/IdeaProjects/expo-app-template/src/domain/constants",
+      "/Users/rene/IdeaProjects/expo-app-template/src/features/examples",
+      "/Users/rene/IdeaProjects/drink-tracking-landingpage"
     ]
   }
 }

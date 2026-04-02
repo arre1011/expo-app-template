@@ -1,5 +1,5 @@
 import type { ExpoConfig } from 'expo/config';
-import { appConfig } from './src/config/appConfig';
+const { appConfig } = require('./src/config/appConfig');
 
 const config: ExpoConfig = {
   name: appConfig.appName,
@@ -34,7 +34,6 @@ const config: ExpoConfig = {
     edgeToEdgeEnabled: true,
     predictiveBackGestureEnabled: false,
     package: appConfig.android.package,
-    minSdkVersion: 26,
     versionCode: appConfig.android.versionCode,
   },
   web: {

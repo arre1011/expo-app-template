@@ -1,10 +1,10 @@
 import { Tabs, Redirect } from 'expo-router';
 import { View, ActivityIndicator, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useProfileStore } from '../../src/ui/hooks/useProfileStore';
-import { useSubscriptionStore } from '../../src/ui/hooks/useSubscriptionStore';
-import { colors } from '../../src/ui/theme';
-import { featureFlags } from '../../src/config/featureFlags';
+import { useProfileStore } from '@/features/core/onboarding/state/useProfileStore';
+import { useSubscriptionStore } from '@/features/core/subscription/state/useSubscriptionStore';
+import { colors } from '@/ui/theme';
+import { featureFlags, isFeatureEnabled } from '@/config/featureFlags';
 
 export default function TabLayout() {
   const hasProfile = useProfileStore(state => state.hasProfile);
@@ -27,7 +27,7 @@ export default function TabLayout() {
   }
 
   // Redirect to subscription wall if no active subscription
-  if (featureFlags.subscriptionRequired && hasProfile && !isProUser) {
+  if (isFeatureEnabled('subscriptionRequired') && hasProfile && !isProUser) {
     return <Redirect href="/subscription-wall" />;
   }
 
@@ -73,9 +73,9 @@ export default function TabLayout() {
       <Tabs.Screen
         name="examples"
         options={{
-          title: 'Examples',
+          title: 'Showcase',
           headerShown: false,
-          href: featureFlags.examplesTab ? undefined : null,
+          href: featureFlags.showcaseTab ? undefined : null,
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="code-slash-outline" size={size} color={color} />
           ),

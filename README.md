@@ -23,7 +23,7 @@ Wenn du aus dem Template eine neue App machst, geh in dieser Reihenfolge vor:
 
 1. Lies diese `README.md` für den Überblick
 2. Arbeite dann [New App Setup](/Users/rene/IdeaProjects/expo-app-template/docs/template/new-app-setup.md) Schritt für Schritt durch
-3. Nutze [Integrations](/Users/rene/IdeaProjects/expo-app-template/docs/template/integrations.md) für RevenueCat, PostHog, Sentry und DeepLinkNow
+3. Nutze [Integrations](/Users/rene/IdeaProjects/expo-app-template/docs/template/integrations.md) für RevenueCat, PostHog, Sentry und optionale Deferred Deep Links
 4. Prüfe vor dem ersten Release die [Rename Checklist](/Users/rene/IdeaProjects/expo-app-template/docs/template/rename-checklist.md)
 
 ## Single Source Of Truth
@@ -48,7 +48,8 @@ Dort definierst du:
 - RevenueCat: API-Keys über `.env.local`
 - PostHog: eigener Key pro App über `.env.local`
 - Sentry: eigene DSN pro App über `.env.local`
-- DeepLinkNow: eigener Key pro App über `.env.local`
+- Direkte Deep Links: über das URL-Scheme der App
+- Deferred Deep Links: Provider später über `src/infrastructure/deep-links/` ergänzen
 
 ## Wichtige Docs
 

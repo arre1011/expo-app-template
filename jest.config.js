@@ -11,7 +11,7 @@ module.exports = {
     '^@/(.*)$': '<rootDir>/src/$1',
   },
   collectCoverageFrom: [
-    'src/domain/**/*.{ts,tsx}',
+    'src/features/**/*.{ts,tsx}',
     '!src/**/*.d.ts',
   ],
   testPathIgnorePatterns: ['/node_modules/', '/__tests__/setup.ts'],

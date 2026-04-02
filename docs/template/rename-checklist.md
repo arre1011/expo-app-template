@@ -19,7 +19,6 @@ Diese Liste ist für den Moment gedacht, in dem du aus dem Template eine echte A
   - RevenueCat Keys
   - PostHog Key
   - Sentry DSN
-  - DeepLinkNow Key
 
 - Assets
   - `assets/icon.png`
@@ -31,7 +30,7 @@ Diese Liste ist für den Moment gedacht, in dem du aus dem Template eine echte A
   - RevenueCat
   - PostHog
   - Sentry
-  - optional DeepLinkNow
+  - optional Deferred-Link-Provider
 
 ## Muss geprüft werden
 

@@ -27,7 +27,7 @@ Wichtig:
 Konfigurationsstellen:
 
 - [src/config/appConfig.ts](/Users/rene/IdeaProjects/expo-app-template/src/config/appConfig.ts)
-- [src/services/revenueCatService.ts](/Users/rene/IdeaProjects/expo-app-template/src/services/revenueCatService.ts)
+- [src/infrastructure/subscriptions/](/Users/rene/IdeaProjects/expo-app-template/src/infrastructure/subscriptions/)
 - `.env.local`
 
 ## PostHog
@@ -53,7 +53,7 @@ Konfigurationsstellen:
 
 - `.env.local` → `EXPO_PUBLIC_POSTHOG_KEY`
 - `.env.local` → `EXPO_PUBLIC_POSTHOG_HOST`
-- [src/services/analyticsService.ts](/Users/rene/IdeaProjects/expo-app-template/src/services/analyticsService.ts)
+- [src/infrastructure/analytics/](/Users/rene/IdeaProjects/expo-app-template/src/infrastructure/analytics/)
 
 ## Sentry
 
@@ -72,21 +72,22 @@ Konfigurationsstellen:
 - [app/_layout.tsx](/Users/rene/IdeaProjects/expo-app-template/app/_layout.tsx)
 - [app.config.ts](/Users/rene/IdeaProjects/expo-app-template/app.config.ts)
 
-## DeepLinkNow
+## Deep Links / Deferred Attribution
 
-Nur nötig, wenn du wirklich Deferred Deep Links / Offer-Routing brauchst.
+Direkte App-Links funktionieren über das URL-Scheme der App. Ein externer Provider ist nur nötig, wenn du wirklich Deferred Deep Links / Install-Attribution brauchst.
 
-Neu pro App:
+Aktueller Stand im Template:
 
-- DeepLinkNow-App
-- API-Key
-- korrektes URL-Scheme
+- direkte Deep Links aktiv
+- Offer-Routing aktiv
+- deferred Provider bewusst nicht eingebaut
+- Adapter-Seam vorbereitet für einen späteren Provider wie AppsFlyer
 
 Konfigurationsstellen:
 
-- `.env.local` → `EXPO_PUBLIC_DEEPLINKNOW_API_KEY`
 - [src/config/appConfig.ts](/Users/rene/IdeaProjects/expo-app-template/src/config/appConfig.ts)
-- [src/services/deepLinkService.ts](/Users/rene/IdeaProjects/expo-app-template/src/services/deepLinkService.ts)
+- [src/infrastructure/deep-links/deep-links.ts](/Users/rene/IdeaProjects/expo-app-template/src/infrastructure/deep-links/deep-links.ts)
+- [src/infrastructure/deep-links/provider-adapter.ts](/Users/rene/IdeaProjects/expo-app-template/src/infrastructure/deep-links/provider-adapter.ts)
 - [app.config.ts](/Users/rene/IdeaProjects/expo-app-template/app.config.ts)
 
 ## Expo / EAS
@@ -113,7 +114,6 @@ Secrets und per-App-Schlüssel:
 - RevenueCat API Keys
 - PostHog Key
 - Sentry DSN
-- DeepLinkNow Key
 
 Was bewusst im Repo steht:
 

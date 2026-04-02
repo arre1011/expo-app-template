@@ -33,7 +33,6 @@ Dann fülle aus:
 
 - `EXPO_PUBLIC_REVENUECAT_IOS_API_KEY`
 - `EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY`
-- `EXPO_PUBLIC_DEEPLINKNOW_API_KEY`
 - `EXPO_PUBLIC_POSTHOG_KEY`
 - `EXPO_PUBLIC_POSTHOG_HOST`
 - `EXPO_PUBLIC_SENTRY_DSN`
@@ -57,12 +56,42 @@ Nicht wiederverwenden:
 - altes PostHog-Projekt
 - altes Sentry-Projekt
 - alte RevenueCat-App
-- alte DeepLinkNow-App
 - alte Store-Credentials
 
 Warum: saubere Daten, saubere Fehleranalyse, kein Vermischen mehrerer Apps.
 
-## 5. Placeholder-Copy ersetzen
+## 5. Optionale Features auswählen
+
+Das Template enthält drei Kategorien von Features:
+
+| Kategorie | Ordner | Aktion |
+|---|---|---|
+| **Core** | `src/features/core/` | Behalten -- jede App braucht diese |
+| **Optional** | `src/features/optional/` | Behalten oder **löschen** |
+| **Showcase** | `src/features/_showcase/` | Anschauen, Patterns kopieren, dann **löschen** |
+| **App-spezifisch** | `src/features/app-specific/` | Hier kommt deine App-Logik rein |
+
+### Optionale Features entfernen
+
+Wenn deine App z.B. keinen Kalender braucht:
+
+1. Lösche `src/features/optional/calendar/`
+2. Lösche `app/(tabs)/calendar.tsx`
+3. Entferne `calendarTab` aus `src/config/featureFlags.ts`
+4. Entferne den `calendar` Tab-Eintrag aus `app/(tabs)/_layout.tsx`
+
+Gleiches gilt für `statistics/`.
+
+### Showcase löschen
+
+Der `_showcase/`-Ordner enthält Referenz-Implementierungen (BottomSheet, WheelPicker, Cards, etc.). Schau dir die Patterns an, kopiere was du brauchst, dann:
+
+1. Lösche `src/features/_showcase/`
+2. Lösche `app/(tabs)/examples.tsx`
+3. Entferne `showcaseTab` aus `src/config/featureFlags.ts`
+4. Entferne den `examples` Tab-Eintrag aus `app/(tabs)/_layout.tsx`
+
+## 6. Placeholder-Copy ersetzen
 
 Mindestens prüfen:
 
@@ -73,14 +102,14 @@ Mindestens prüfen:
 - `app/(modals)/privacy-policy.tsx`
 - `app/(tabs)/settings.tsx`
 
-## 6. Assets austauschen
+## 7. Assets austauschen
 
 - `assets/icon.png`
 - `assets/adaptive-icon.png`
 - `assets/splash-icon.png`
 - `assets/favicon.png`
 
-## 7. Audit laufen lassen
+## 8. Audit laufen lassen
 
 ```bash
 npm run template:audit
@@ -92,7 +121,18 @@ Der Befehl findet:
 - Default-Placeholder in Konfigdateien
 - nicht ersetzte Template-IDs
 
-## 8. Erst dann Release vorbereiten
+## 9. Template Remote einrichten
+
+Damit du in Zukunft Template-Updates in diese App mergen kannst:
+
+```bash
+git remote add template git@github.com:your-org/expo-app-template.git
+git fetch template
+```
+
+Details und fortgeschrittene Workflows (Releases, Feature-Branches, Batch-Updates) findest du in [Template Updates](./template-updates.md).
+
+## 10. Erst dann Release vorbereiten
 
 Vor dem ersten Build:
 

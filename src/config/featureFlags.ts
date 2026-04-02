@@ -5,12 +5,23 @@
  * Add new flags when the template grows real branches of behavior.
  */
 
-import type { OfferType } from '../ui/hooks/useOfferStore';
+import type { OfferType } from '@/features/core/subscription/model/types';
 
 export const featureFlags = {
+  // ─── Infrastructure Toggles ────────────────────────────────────────
+  // Set to true when your app uses RevenueCat for subscriptions.
+  // When false, RevenueCat is never initialized and all subscription
+  // features (paywall, trial reminder, subscription wall) are disabled.
+  revenueCat: false,
+
+  // ─── Optional Features (remove if not needed in your app) ──────────
   calendarTab: true,
   statisticsTab: false,
-  examplesTab: __DEV__,
+
+  // ─── Showcase (only visible in dev, delete _showcase/ folder for production apps) ──
+  showcaseTab: __DEV__,
+
+  // ─── Core Feature Flags ────────────────────────────────────────────
   onboardingPaywall: true,
   paywallBenefits: false,
   paywallTrustSignals: true,
@@ -18,10 +29,13 @@ export const featureFlags = {
   trialReminder: true,
   subscriptionSection: true,
   deepLinkOffers: true,
+  // Keep direct app-link offer routing enabled.
+  // Deferred matching stays off until a replacement provider such as AppsFlyer is integrated.
+  deferredDeepLinkMatching: false,
 } as const;
 
 // ─── Dev Override: Force a specific paywall variant for testing ────────────
-// Set to an OfferType to bypass DeepLinkNow and simulate a deep link offer.
+// Set to an OfferType to bypass provider resolution and simulate a deep link offer.
 // Set to null for normal behavior (production default).
 //
 // Usage:
@@ -41,7 +55,19 @@ export const devOfferConfig = {
 // Type for feature flag keys
 export type FeatureFlag = keyof typeof featureFlags;
 
-// Helper function to check if a feature is enabled
+// Flags that require RevenueCat to function
+const requiresRevenueCat: ReadonlySet<FeatureFlag> = new Set([
+  'onboardingPaywall',
+  'subscriptionRequired',
+  'trialReminder',
+  'subscriptionSection',
+  'paywallBenefits',
+  'paywallTrustSignals',
+]);
+
+// Helper function to check if a feature is enabled.
+// Subscription-related flags automatically return false when revenueCat is off.
 export const isFeatureEnabled = (flag: FeatureFlag): boolean => {
+  if (!featureFlags.revenueCat && requiresRevenueCat.has(flag)) return false;
   return featureFlags[flag];
 };
